@@ -1,9 +1,9 @@
-package com.example.demo.controller;
+package backend.controller;
 
-import com.example.demo.dto.LoginRequest;
-import com.example.demo.dto.RegistrationRequest;
-import com.example.demo.entity.User;
-import com.example.demo.repository.UserRepository;
+import backend.dto.LoginRequest;
+import backend.dto.RegistrationRequest;
+import backend.entity.User;
+import backend.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;

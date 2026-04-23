@@ -1,4 +1,4 @@
-package com.example.demo.dto;
+package backend.dto;
 
 public class LoginRequest {
     private String usernameOrEmail;

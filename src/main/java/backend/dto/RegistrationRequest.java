@@ -1,4 +1,4 @@
-package com.example.demo.dto;
+package backend.dto;
 
 public class RegistrationRequest {
     private String firstName;

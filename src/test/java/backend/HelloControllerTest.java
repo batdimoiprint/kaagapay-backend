@@ -1,6 +1,6 @@
-package com.example.demo;
+package backend;
 
-import com.example.demo.model.Greeting;
+import backend.model.Greeting;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;

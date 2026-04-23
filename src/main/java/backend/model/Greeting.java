@@ -1,4 +1,4 @@
-package com.example.demo.model;
+package backend.model;
 
 public class Greeting {
     private String message;
