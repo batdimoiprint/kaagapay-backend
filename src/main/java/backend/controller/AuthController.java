@@ -8,6 +8,8 @@ import backend.security.JwtService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
@@ -36,18 +38,35 @@ public class AuthController {
     @Operation(summary = "User Login", description = "Login using username and password to get JWT tokens")
     public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequest loginRequest) {
         Optional<User> userOpt = userRepository.findByUsername(loginRequest.getUsernameOrEmail());
-        
+
         Map<String, String> response = new HashMap<>();
         if (userOpt.isPresent() && userOpt.get().getPassword().equals(loginRequest.getPassword())) {
             User user = userOpt.get();
             String accessToken = jwtService.generateToken(user.getId(), user.getUsername());
             String refreshToken = jwtService.generateRefreshToken(user.getUsername());
-            
-            response.put("accessToken", accessToken);
-            response.put("refreshToken", refreshToken);
+
+            ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", accessToken)
+                    .httpOnly(true)
+                    .secure(false)
+                    .path("/")
+                    .sameSite("Lax")
+                    .maxAge(jwtService.getJwtExpiration() / 1000)
+                    .build();
+
+            ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", refreshToken)
+                    .httpOnly(true)
+                    .secure(false)
+                    .path("/")
+                    .sameSite("Lax")
+                    .maxAge(jwtService.getRefreshExpiration() / 1000)
+                    .build();
+
             response.put("userId", String.valueOf(user.getId()));
             response.put("message", "Login successful");
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
+                    .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+                    .body(response);
         } else {
             response.put("message", "Invalid username or password");
             return ResponseEntity.status(401).body(response);
