@@ -20,7 +20,18 @@ public class User {
     
     private String password;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private java.util.List<Complaint> complaints;
+
     public User() {}
+
+    public java.util.List<Complaint> getComplaints() {
+        return complaints;
+    }
+
+    public void setComplaints(java.util.List<Complaint> complaints) {
+        this.complaints = complaints;
+    }
 
     public Long getId() {
         return id;
