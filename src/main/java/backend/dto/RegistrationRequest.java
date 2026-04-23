@@ -1,11 +1,24 @@
 package backend.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 public class RegistrationRequest {
+    @Schema(description = "User's first name", example = "John")
     private String firstName;
+
+    @Schema(description = "User's last name", example = "Doe")
     private String lastName;
+
+    @Schema(description = "Contact number", example = "09123456789")
     private String contactNumber;
+
+    @Schema(description = "Home address", example = "123 Street, City")
     private String address;
+
+    @Schema(description = "Desired username", example = "johndoe")
     private String username;
+
+    @Schema(description = "User password", example = "password123")
     private String password;
 
     public RegistrationRequest() {}

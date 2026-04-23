@@ -1,7 +1,12 @@
 package backend.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 public class LoginRequest {
+    @Schema(description = "Username or Email address", example = "johndoe")
     private String usernameOrEmail;
+
+    @Schema(description = "User password", example = "password123")
     private String password;
 
     public LoginRequest() {}

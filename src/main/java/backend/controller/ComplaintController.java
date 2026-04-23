@@ -28,7 +28,7 @@ public class ComplaintController {
 
     @PostMapping
     @Operation(summary = "Create a new complaint")
-    public ResponseEntity<?> createComplaint(@RequestBody ComplaintRequest request) {
+    public ResponseEntity<?> createComplaint(@ModelAttribute ComplaintRequest request) {
         Optional<User> userOpt = userRepository.findById(request.getUserId());
         if (userOpt.isEmpty()) {
             return ResponseEntity.badRequest().body("User not found");
@@ -67,7 +67,7 @@ public class ComplaintController {
 
     @PatchMapping("/{id}")
     @Operation(summary = "Update complaint status and remarks")
-    public ResponseEntity<?> updateComplaintStatus(@PathVariable Long id, @RequestBody ComplaintStatusUpdate update) {
+    public ResponseEntity<?> updateComplaintStatus(@PathVariable Long id, @ModelAttribute ComplaintStatusUpdate update) {
         Optional<Complaint> complaintOpt = complaintRepository.findById(id);
         if (complaintOpt.isEmpty()) {
             return ResponseEntity.notFound().build();

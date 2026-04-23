@@ -34,9 +34,9 @@ public class AuthController {
         return new RedirectView("/swagger-ui/index.html");
     }
 
-    @PostMapping("/login")
-    @Operation(summary = "User Login", description = "Login using username and password to get JWT tokens")
-    public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequest loginRequest) {
+    @PostMapping(value = "/login")
+    @Operation(summary = "User Login", description = "Login using username and password (form-encoded or query params) to get JWT tokens")
+    public ResponseEntity<Map<String, String>> login(@ModelAttribute LoginRequest loginRequest) {
         Optional<User> userOpt = userRepository.findByUsername(loginRequest.getUsernameOrEmail());
 
         Map<String, String> response = new HashMap<>();
@@ -73,9 +73,9 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/register")
+    @PostMapping(value = "/register")
     @Operation(summary = "User Registration", description = "Register a new user with personal details")
-    public ResponseEntity<Map<String, String>> register(@RequestBody RegistrationRequest registrationRequest) {
+    public ResponseEntity<Map<String, String>> register(@ModelAttribute RegistrationRequest registrationRequest) {
         if (userRepository.findByUsername(registrationRequest.getUsername()).isPresent()) {
             Map<String, String> response = new HashMap<>();
             response.put("message", "Username already exists");
