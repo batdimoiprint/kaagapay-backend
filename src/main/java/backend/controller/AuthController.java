@@ -6,6 +6,8 @@ import backend.entity.User;
 import backend.repository.UserRepository;
 import backend.security.JwtService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -30,12 +32,19 @@ public class AuthController {
 
     @GetMapping("/")
     @Operation(summary = "Redirect to Swagger UI")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "302", description = "Redirects to Swagger documentation API interface")
+    })
     public RedirectView redirectToSwagger() {
         return new RedirectView("/swagger-ui/index.html");
     }
 
     @PostMapping(value = "/login")
     @Operation(summary = "User Login", description = "Login using username and password (form-encoded or query params) to get JWT tokens")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Login successful. Returns access token, refresh token in cookies, and user ID."),
+        @ApiResponse(responseCode = "401", description = "Unauthorized. Invalid username or password.")
+    })
     public ResponseEntity<Map<String, String>> login(@ModelAttribute LoginRequest loginRequest) {
         Optional<User> userOpt = userRepository.findByUsername(loginRequest.getUsernameOrEmail());
 
@@ -60,9 +69,10 @@ public class AuthController {
                     .sameSite("Lax")
                     .maxAge(jwtService.getRefreshExpiration() / 1000)
                     .build();
-
-            response.put("userId", String.valueOf(user.getId()));
             response.put("message", "Login successful");
+            response.put("userId", String.valueOf(user.getId()));            
+            response.put("accessToken", accessToken);
+            response.put("refreshToken", refreshToken);
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
                     .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
@@ -75,6 +85,10 @@ public class AuthController {
 
     @PostMapping(value = "/register")
     @Operation(summary = "User Registration", description = "Register a new user with personal details")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "User registered successfully"),
+        @ApiResponse(responseCode = "400", description = "Bad Request. Username already exists or invalid data.")
+    })
     public ResponseEntity<Map<String, String>> register(@ModelAttribute RegistrationRequest registrationRequest) {
         if (userRepository.findByUsername(registrationRequest.getUsername()).isPresent()) {
             Map<String, String> response = new HashMap<>();
@@ -102,6 +116,10 @@ public class AuthController {
 
     @PostMapping("/refresh-token")
     @Operation(summary = "Refresh Access Token")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Access token refreshed successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized. Invalid or expired refresh token.")
+    })
     public ResponseEntity<Map<String, String>> refreshToken(@RequestHeader("Authorization") String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(401).build();

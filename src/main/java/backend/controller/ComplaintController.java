@@ -7,6 +7,8 @@ import backend.entity.User;
 import backend.repository.ComplaintRepository;
 import backend.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +30,10 @@ public class ComplaintController {
 
     @PostMapping
     @Operation(summary = "Create a new complaint")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Complaint created successfully"),
+        @ApiResponse(responseCode = "400", description = "Bad Request. User not found or invalid complaint data.")
+    })
     public ResponseEntity<?> createComplaint(@ModelAttribute ComplaintRequest request) {
         Optional<User> userOpt = userRepository.findById(request.getUserId());
         if (userOpt.isEmpty()) {
@@ -47,18 +53,24 @@ public class ComplaintController {
 
     @GetMapping
     @Operation(summary = "Get all complaints")
+    @ApiResponse(responseCode = "200", description = "Returns a list of all complaints")
     public List<Complaint> getAllComplaints() {
         return complaintRepository.findAll();
     }
 
     @GetMapping("/user/{userId}")
     @Operation(summary = "Get complaints by user ID")
+    @ApiResponse(responseCode = "200", description = "Returns a list of complaints for a specific user")
     public List<Complaint> getComplaintsByUser(@PathVariable Long userId) {
         return complaintRepository.findByUserId(userId);
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get a single complaint by ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Complaint found and returned"),
+        @ApiResponse(responseCode = "404", description = "Complaint not found for given ID")
+    })
     public ResponseEntity<?> getComplaintById(@PathVariable Long id) {
         return complaintRepository.findById(id)
                 .map(ResponseEntity::ok)
@@ -67,6 +79,10 @@ public class ComplaintController {
 
     @PatchMapping("/{id}")
     @Operation(summary = "Update complaint status and remarks")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Complaint updated successfully"),
+        @ApiResponse(responseCode = "404", description = "Complaint not found for given ID")
+    })
     public ResponseEntity<?> updateComplaintStatus(@PathVariable Long id, @ModelAttribute ComplaintStatusUpdate update) {
         Optional<Complaint> complaintOpt = complaintRepository.findById(id);
         if (complaintOpt.isEmpty()) {
@@ -86,6 +102,10 @@ public class ComplaintController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a complaint")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Complaint deleted successfully"),
+        @ApiResponse(responseCode = "404", description = "Complaint not found for given ID")
+    })
     public ResponseEntity<?> deleteComplaint(@PathVariable Long id) {
         if (!complaintRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
