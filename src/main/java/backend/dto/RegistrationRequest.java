@@ -12,8 +12,17 @@ public class RegistrationRequest {
     @Schema(description = "Contact number", example = "09123456789")
     private String contactNumber;
 
-    @Schema(description = "Home address", example = "123 Street, City")
-    private String address;
+    @Schema(description = "Email address", example = "johndoe@example.com")
+    private String email;
+
+    @Schema(description = "Subdivision", example = "Greenwoods")
+    private String subdivision;
+
+    @Schema(description = "Street name", example = "Mabini")
+    private String streetName;
+
+    @Schema(description = "Street number", example = "123")
+    private String streetNo;
 
     @Schema(description = "Desired username", example = "johndoe")
     private String username;
@@ -47,12 +56,36 @@ public class RegistrationRequest {
         this.contactNumber = contactNumber;
     }
 
-    public String getAddress() {
-        return address;
+    public String getEmail() {
+        return email;
     }
 
-    public void setAddress(String address) {
-        this.address = address;
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getSubdivision() {
+        return subdivision;
+    }
+
+    public void setSubdivision(String subdivision) {
+        this.subdivision = subdivision;
+    }
+
+    public String getStreetName() {
+        return streetName;
+    }
+
+    public void setStreetName(String streetName) {
+        this.streetName = streetName;
+    }
+
+    public String getStreetNo() {
+        return streetNo;
+    }
+
+    public void setStreetNo(String streetNo) {
+        this.streetNo = streetNo;
     }
 
     public String getUsername() {

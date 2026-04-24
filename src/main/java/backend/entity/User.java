@@ -13,7 +13,13 @@ public class User {
     private String firstName;
     private String lastName;
     private String contactNumber;
-    private String address;
+    
+    @Column(unique = true)
+    private String email;
+    
+    private String subdivision;
+    private String streetName;
+    private String streetNo;
     
     @Column(unique = true)
     private String username;
@@ -65,12 +71,36 @@ public class User {
         this.contactNumber = contactNumber;
     }
 
-    public String getAddress() {
-        return address;
+    public String getEmail() {
+        return email;
     }
 
-    public void setAddress(String address) {
-        this.address = address;
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getSubdivision() {
+        return subdivision;
+    }
+
+    public void setSubdivision(String subdivision) {
+        this.subdivision = subdivision;
+    }
+
+    public String getStreetName() {
+        return streetName;
+    }
+
+    public void setStreetName(String streetName) {
+        this.streetName = streetName;
+    }
+
+    public String getStreetNo() {
+        return streetNo;
+    }
+
+    public void setStreetNo(String streetNo) {
+        this.streetNo = streetNo;
     }
 
     public String getUsername() {

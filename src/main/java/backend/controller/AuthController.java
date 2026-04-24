@@ -86,7 +86,10 @@ public class AuthController {
         user.setFirstName(registrationRequest.getFirstName());
         user.setLastName(registrationRequest.getLastName());
         user.setContactNumber(registrationRequest.getContactNumber());
-        user.setAddress(registrationRequest.getAddress());
+        user.setEmail(registrationRequest.getEmail());
+        user.setSubdivision(registrationRequest.getSubdivision());
+        user.setStreetName(registrationRequest.getStreetName());
+        user.setStreetNo(registrationRequest.getStreetNo());
         user.setUsername(registrationRequest.getUsername());
         user.setPassword(registrationRequest.getPassword());
 
