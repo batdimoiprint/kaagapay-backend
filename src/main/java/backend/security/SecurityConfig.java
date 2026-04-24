@@ -35,6 +35,7 @@ public class SecurityConfig {
                 .requestMatchers(
                     AntPathRequestMatcher.antMatcher("/"),
                     AntPathRequestMatcher.antMatcher("/login"),
+                    AntPathRequestMatcher.antMatcher("/me"),
                     AntPathRequestMatcher.antMatcher("/register"),
                     AntPathRequestMatcher.antMatcher("/refresh-token"),
                     AntPathRequestMatcher.antMatcher("/hello"),

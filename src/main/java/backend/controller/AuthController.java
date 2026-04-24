@@ -120,12 +120,11 @@ public class AuthController {
         @ApiResponse(responseCode = "200", description = "Access token refreshed successfully"),
         @ApiResponse(responseCode = "401", description = "Unauthorized. Invalid or expired refresh token.")
     })
-    public ResponseEntity<Map<String, String>> refreshToken(@RequestHeader("Authorization") String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+    public ResponseEntity<Map<String, String>> refreshToken(@CookieValue(value = "refreshToken", required = false) String refreshToken) {
+        if (refreshToken == null || refreshToken.isEmpty()) {
             return ResponseEntity.status(401).build();
         }
         
-        String refreshToken = authHeader.substring(7);
         String username = jwtService.extractUsername(refreshToken);
         
         if (username != null && jwtService.isTokenValid(refreshToken, username)) {
@@ -138,5 +137,46 @@ public class AuthController {
             }
         }
         return ResponseEntity.status(401).build();
+    }
+
+    @GetMapping("/me")
+    @Operation(summary = "Get Current User Information", description = "Returns user information based on the provided access token")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved user information"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized. Invalid or missing token."),
+        @ApiResponse(responseCode = "404", description = "User not found.")
+    })
+    public ResponseEntity<?> getCurrentUser(@CookieValue(value = "accessToken", required = false) String accessToken) {
+        if (accessToken == null || accessToken.isEmpty()) {
+            return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
+        }
+        
+        try {
+            String username = jwtService.extractUsername(accessToken);
+            
+            if (username != null && jwtService.isTokenValid(accessToken, username)) {
+                Optional<User> userOpt = userRepository.findByUsername(username);
+                if (userOpt.isPresent()) {
+                    User user = userOpt.get();
+                    Map<String, Object> userInfo = new HashMap<>();
+                    userInfo.put("id", user.getId());
+                    userInfo.put("username", user.getUsername());
+                    userInfo.put("firstName", user.getFirstName());
+                    userInfo.put("lastName", user.getLastName());
+                    userInfo.put("email", user.getEmail());
+                    userInfo.put("contactNumber", user.getContactNumber());
+                    userInfo.put("subdivision", user.getSubdivision());
+                    userInfo.put("streetName", user.getStreetName());
+                    userInfo.put("streetNo", user.getStreetNo());
+                    return ResponseEntity.ok(userInfo);
+                } else {
+                    return ResponseEntity.status(404).body(Map.of("message", "User not found"));
+                }
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body(Map.of("message", "Invalid token"));
+        }
+        
+        return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
     }
 }
