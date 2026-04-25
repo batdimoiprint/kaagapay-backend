@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
 
@@ -29,6 +30,9 @@ public class AuthController {
 
     @Autowired
     private JwtService jwtService;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @GetMapping("/")
     @Operation(summary = "Redirect to Swagger UI")
@@ -49,7 +53,7 @@ public class AuthController {
         Optional<User> userOpt = userRepository.findByUsername(loginRequest.getUsernameOrEmail());
 
         Map<String, String> response = new HashMap<>();
-        if (userOpt.isPresent() && userOpt.get().getPassword().equals(loginRequest.getPassword())) {
+        if (userOpt.isPresent() && passwordEncoder.matches(loginRequest.getPassword(), userOpt.get().getPassword())) {
             User user = userOpt.get();
             String accessToken = jwtService.generateToken(user.getId(), user.getUsername());
             String refreshToken = jwtService.generateRefreshToken(user.getUsername());
@@ -100,12 +104,15 @@ public class AuthController {
         user.setFirstName(registrationRequest.getFirstName());
         user.setLastName(registrationRequest.getLastName());
         user.setContactNumber(registrationRequest.getContactNumber());
+        user.setAge(registrationRequest.getAge());
+        user.setGender(registrationRequest.getGender());
+        user.setRole(registrationRequest.getRole() != null && !registrationRequest.getRole().isEmpty() ? registrationRequest.getRole() : "resident");
         user.setEmail(registrationRequest.getEmail());
         user.setSubdivision(registrationRequest.getSubdivision());
         user.setStreetName(registrationRequest.getStreetName());
         user.setStreetNo(registrationRequest.getStreetNo());
         user.setUsername(registrationRequest.getUsername());
-        user.setPassword(registrationRequest.getPassword());
+        user.setPassword(passwordEncoder.encode(registrationRequest.getPassword()));
 
         userRepository.save(user);
 
@@ -165,6 +172,9 @@ public class AuthController {
                     userInfo.put("lastName", user.getLastName());
                     userInfo.put("email", user.getEmail());
                     userInfo.put("contactNumber", user.getContactNumber());
+                    userInfo.put("age", user.getAge());
+                    userInfo.put("gender", user.getGender());
+                    userInfo.put("role", user.getRole());
                     userInfo.put("subdivision", user.getSubdivision());
                     userInfo.put("streetName", user.getStreetName());
                     userInfo.put("streetNo", user.getStreetNo());

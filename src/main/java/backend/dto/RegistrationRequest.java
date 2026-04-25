@@ -12,6 +12,15 @@ public class RegistrationRequest {
     @Schema(description = "Contact number", example = "09123456789")
     private String contactNumber;
 
+    @Schema(description = "User's age", example = "25")
+    private Integer age;
+
+    @Schema(description = "User's gender", example = "Male")
+    private String gender;
+
+    @Schema(description = "User's role (defaults to resident)", example = "resident", defaultValue = "resident")
+    private String role;
+
     @Schema(description = "Email address", example = "johndoe@example.com")
     private String email;
 
@@ -54,6 +63,30 @@ public class RegistrationRequest {
 
     public void setContactNumber(String contactNumber) {
         this.contactNumber = contactNumber;
+    }
+
+    public Integer getAge() {
+        return age;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     public String getEmail() {

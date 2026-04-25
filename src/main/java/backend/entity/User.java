@@ -14,6 +14,11 @@ public class User {
     private String lastName;
     private String contactNumber;
     
+    private Integer age;
+    private String gender;
+    
+    private String role;
+
     @Column(unique = true)
     private String email;
     
@@ -69,6 +74,30 @@ public class User {
 
     public void setContactNumber(String contactNumber) {
         this.contactNumber = contactNumber;
+    }
+
+    public Integer getAge() {
+        return age;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     public String getEmail() {
