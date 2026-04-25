@@ -6,6 +6,7 @@ import backend.entity.Complaint;
 import backend.entity.User;
 import backend.repository.ComplaintRepository;
 import backend.repository.UserRepository;
+import backend.security.JwtService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -13,6 +14,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,14 +31,41 @@ public class ComplaintController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private JwtService jwtService;
+
+    private Long extractUserIdFromRequest(HttpServletRequest request) {
+        String jwt = null;
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            jwt = authHeader.substring(7);
+        } else if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("accessToken".equals(cookie.getName())) {
+                    jwt = cookie.getValue();
+                    break;
+                }
+            }
+        }
+        if (jwt != null) {
+            return jwtService.extractUserId(jwt);
+        }
+        return null;
+    }
+
     @PostMapping
     @Operation(summary = "Create a new complaint")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Complaint created successfully"),
         @ApiResponse(responseCode = "400", description = "Bad Request. User not found or invalid complaint data.")
     })
-    public ResponseEntity<?> createComplaint(@ModelAttribute ComplaintRequest request) {
-        Optional<User> userOpt = userRepository.findById(request.getUserId());
+    public ResponseEntity<?> createComplaint(@ModelAttribute ComplaintRequest request, HttpServletRequest httpRequest) {
+        Long userId = extractUserIdFromRequest(httpRequest);
+        if (userId == null) {
+            return ResponseEntity.status(401).body("Unauthorized: Invalid or missing token");
+        }
+
+        Optional<User> userOpt = userRepository.findById(userId);
         if (userOpt.isEmpty()) {
             return ResponseEntity.badRequest().body("User not found");
         }
@@ -58,11 +88,15 @@ public class ComplaintController {
         return complaintRepository.findAll();
     }
 
-    @GetMapping("/user/{userId}")
-    @Operation(summary = "Get complaints by user ID")
-    @ApiResponse(responseCode = "200", description = "Returns a list of complaints for a specific user")
-    public List<Complaint> getComplaintsByUser(@PathVariable Long userId) {
-        return complaintRepository.findByUserId(userId);
+    @GetMapping("-complaints")
+    @Operation(summary = "Get complaints filed by current user")
+    @ApiResponse(responseCode = "200", description = "Returns a list of complaints for the logged-in user")
+    public ResponseEntity<?> getMyComplaints(HttpServletRequest httpRequest) {
+        Long userId = extractUserIdFromRequest(httpRequest);
+        if (userId == null) {
+            return ResponseEntity.status(401).body("Unauthorized: Invalid or missing token");
+        }
+        return ResponseEntity.ok(complaintRepository.findByUserId(userId));
     }
 
     @GetMapping("/{id}")

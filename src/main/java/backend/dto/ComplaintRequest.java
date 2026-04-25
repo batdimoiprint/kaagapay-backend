@@ -5,9 +5,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 import java.time.LocalDateTime;
 
 public class ComplaintRequest {
-    @Schema(description = "ID of the user filing the complaint", example = "1")
-    private Long userId;
-
     @Schema(description = "Type of complaint", example = "Street Light Repair")
     private String complaintType;
     
@@ -22,14 +19,6 @@ public class ComplaintRequest {
     private String location;
 
     public ComplaintRequest() {}
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
 
     public String getComplaintType() {
         return complaintType;
