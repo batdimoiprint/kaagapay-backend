@@ -51,28 +51,30 @@ public class EventController {
     @Operation(summary = "Trigger SSE Event", description = "Send a custom alert message to all connected SSE clients and via push notification.")
     @PostMapping()
     public String triggerEvent(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Message to send",
-                    content = @io.swagger.v3.oas.annotations.media.Content(
-                            mediaType = "application/json",
-                            schema = @io.swagger.v3.oas.annotations.media.Schema(example = "{\"message\": \"check-in\"}")
-                    )
-            )
+            @io.swagger.v3.oas.annotations.Parameter(description = "Message to send (optional, defaults to 'check-in')")
+            @RequestParam(required = false) String message,
             @RequestBody(required = false) Map<String, String> body) {
-        String message = (body != null && body.containsKey("message")) ? body.get("message") : "check-in";
+        
+        String alertMessage = "check-in";
+        if (message != null && !message.isEmpty()) {
+            alertMessage = message;
+        } else if (body != null && body.containsKey("message")) {
+            alertMessage = body.get("message");
+        }
 
         List<SseEmitter> deadEmitters = new CopyOnWriteArrayList<>();
+        String finalAlertMessage = alertMessage;
         emitters.forEach(emitter -> {
             try {
                 // SseEmitter automatically formats the output to `data: {"alert": "message"}\n\n`
                 emitter.send(SseEmitter.event()
-                        .data("{\"alert\": \"" + message + "\"}"));
+                        .data("{\"alert\": \"" + finalAlertMessage + "\"}"));
             } catch (IOException e) {
                 deadEmitters.add(emitter);
             }
         });
         emitters.removeAll(deadEmitters);
-        pushyService.sendPushNotification(message);
+        pushyService.sendPushNotification(alertMessage);
         return "Event triggered successfully to " + emitters.size() + " subscribers";
     }
 }
