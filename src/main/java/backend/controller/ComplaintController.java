@@ -2,8 +2,10 @@ package backend.controller;
 
 import backend.dto.ComplaintRequest;
 import backend.dto.ComplaintStatusUpdate;
+import backend.dto.RemarkRequest;
 import backend.entity.Complaint;
 import backend.entity.User;
+import backend.model.Remark;
 import backend.repository.ComplaintRepository;
 import backend.repository.UserRepository;
 import backend.security.JwtService;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -112,9 +115,9 @@ public class ComplaintController {
     }
 
     @PatchMapping("/{id}")
-    @Operation(summary = "Update complaint status and remarks")
+    @Operation(summary = "Update complaint status")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Complaint updated successfully"),
+        @ApiResponse(responseCode = "200", description = "Status updated successfully"),
         @ApiResponse(responseCode = "404", description = "Complaint not found for given ID")
     })
     public ResponseEntity<?> updateComplaintStatus(@PathVariable Long id, @ModelAttribute ComplaintStatusUpdate update) {
@@ -127,9 +130,31 @@ public class ComplaintController {
         if (update.getStatus() != null) {
             complaint.setStatus(update.getStatus());
         }
-        if (update.getRemarks() != null) {
-            complaint.setRemarks(update.getRemarks());
+
+        return ResponseEntity.ok(complaintRepository.save(complaint));
+    }
+
+    @PatchMapping("/{id}/remarks")
+    @Operation(summary = "Add a remark to a complaint")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Remark added successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized"),
+        @ApiResponse(responseCode = "404", description = "Complaint not found")
+    })
+    public ResponseEntity<?> addRemark(@PathVariable Long id, @ModelAttribute RemarkRequest request, HttpServletRequest httpRequest) {
+        Long userId = extractUserIdFromRequest(httpRequest);
+        if (userId == null) {
+            return ResponseEntity.status(401).body("Unauthorized: Invalid or missing token");
         }
+
+        Optional<Complaint> complaintOpt = complaintRepository.findById(id);
+        if (complaintOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Complaint complaint = complaintOpt.get();
+        Remark remark = new Remark(LocalDateTime.now(), request.getRemarkDescription(), userId);
+        complaint.getRemarks().add(remark);
 
         return ResponseEntity.ok(complaintRepository.save(complaint));
     }

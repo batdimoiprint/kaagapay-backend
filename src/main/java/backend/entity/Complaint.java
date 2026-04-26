@@ -1,8 +1,13 @@
 package backend.entity;
 
+import backend.model.Remark;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "complaints")
@@ -17,7 +22,10 @@ public class Complaint {
     private String description;
     private String location;
     private String status; // e.g., PENDING, IN_PROGRESS, RESOLVED
-    private String remarks;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<Remark> remarks = new ArrayList<>();
 
     @ManyToOne
     @JoinColumn(name = "user_id")
@@ -74,11 +82,11 @@ public class Complaint {
         this.status = status;
     }
 
-    public String getRemarks() {
+    public List<Remark> getRemarks() {
         return remarks;
     }
 
-    public void setRemarks(String remarks) {
+    public void setRemarks(List<Remark> remarks) {
         this.remarks = remarks;
     }
 
