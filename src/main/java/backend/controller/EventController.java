@@ -48,9 +48,17 @@ public class EventController {
         return emitter;
     }
 
-    @Operation(summary = "Trigger SSE Event", description = "Send a 'check-in' alert to all connected SSE clients.")
+    @Operation(summary = "Trigger SSE Event", description = "Send a custom alert message to all connected SSE clients and via push notification.")
     @PostMapping()
-    public String triggerEvent(@RequestBody(required = false) Map<String, String> body) {
+    public String triggerEvent(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Message to send",
+                    content = @io.swagger.v3.oas.annotations.media.Content(
+                            mediaType = "application/json",
+                            schema = @io.swagger.v3.oas.annotations.media.Schema(example = "{\"message\": \"check-in\"}")
+                    )
+            )
+            @RequestBody(required = false) Map<String, String> body) {
         String message = (body != null && body.containsKey("message")) ? body.get("message") : "check-in";
 
         List<SseEmitter> deadEmitters = new CopyOnWriteArrayList<>();
