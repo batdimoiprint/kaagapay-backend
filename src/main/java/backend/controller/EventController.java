@@ -17,6 +17,11 @@ import java.util.List;
 public class EventController {
 
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
+    private final backend.service.PushyService pushyService;
+
+    public EventController(backend.service.PushyService pushyService) {
+        this.pushyService = pushyService;
+    }
 
     @Operation(summary = "Subscribe to SSE", description = "Clients connect here to keep an open connection for Server-Sent Events.")
     @GetMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -57,6 +62,7 @@ public class EventController {
             }
         });
         emitters.removeAll(deadEmitters);
+        pushyService.sendPushNotification("check-in");
         return "Event triggered successfully to " + emitters.size() + " subscribers";
     }
 }
