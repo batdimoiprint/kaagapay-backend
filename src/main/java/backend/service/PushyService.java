@@ -24,7 +24,10 @@ public class PushyService {
     }
 
     public void sendPushNotification(String alert) {
-        if (deviceToken == null) return;
+        if (deviceToken == null || deviceToken.trim().isEmpty()) {
+            System.out.println("No device token registered. Skipping push notification.");
+            return;
+        }
 
         String url = "https://api.pushy.me/push?api_key=" + secretApiKey;
 

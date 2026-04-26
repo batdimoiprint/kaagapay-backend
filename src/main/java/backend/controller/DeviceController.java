@@ -16,6 +16,7 @@ public class DeviceController {
 
     @PostMapping("/register")
     public String register(@RequestParam String token) {
+        System.out.println("Received device token: " + token);
         pushyService.storeToken(token);
         return "Token registered";
     }
