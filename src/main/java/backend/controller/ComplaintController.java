@@ -96,7 +96,7 @@ public class ComplaintController {
         if (userId == null) {
             return ResponseEntity.status(401).body("Unauthorized: Invalid or missing token");
         }
-        return ResponseEntity.ok(complaintRepository.findByUserId(userId));
+        return ResponseEntity.ok(complaintRepository.findByUser_Id(userId));
     }
 
     @GetMapping("/{id}")
