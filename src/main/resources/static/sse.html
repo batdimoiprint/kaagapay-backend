@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head><title>SSE Listener</title></head>
+<body>
+    <div id="status">Connecting...</div>
+    <script>
+        const evtSource = new EventSource("/event"); // Uses relative path
+
+        evtSource.onmessage = (event) => {
+            window.AppInventor.setWebViewString(event.data);
+            document.getElementById('status').innerText = "Last message: " + event.data;
+        };
+
+        evtSource.addEventListener("init", (event) => {
+            window.AppInventor.setWebViewString("INIT:" + event.data);
+            document.getElementById('status').innerText = "Status: Connected";
+        });
+
+        evtSource.onerror = () => {
+            window.AppInventor.setWebViewString("ERROR: Connection dropped");
+            document.getElementById('status').innerText = "Status: Error/Dropped";
+        };
+    </script>
+</body>
+</html>
