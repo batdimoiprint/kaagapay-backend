@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.List;
 
@@ -49,20 +50,21 @@ public class EventController {
 
     @Operation(summary = "Trigger SSE Event", description = "Send a 'check-in' alert to all connected SSE clients.")
     @PostMapping()
-    // It's helpful to specify custom raw string writing to ensure exact output if needed, but SseEmitter handles data: ... \n\n automatically
-    public String triggerEvent() {
+    public String triggerEvent(@RequestBody(required = false) Map<String, String> body) {
+        String message = (body != null && body.containsKey("message")) ? body.get("message") : "check-in";
+
         List<SseEmitter> deadEmitters = new CopyOnWriteArrayList<>();
         emitters.forEach(emitter -> {
             try {
-                // SseEmitter automatically formats the output to `data: {"alert": "check-in"}\n\n`
+                // SseEmitter automatically formats the output to `data: {"alert": "message"}\n\n`
                 emitter.send(SseEmitter.event()
-                        .data("{\"alert\": \"check-in\"}"));
+                        .data("{\"alert\": \"" + message + "\"}"));
             } catch (IOException e) {
                 deadEmitters.add(emitter);
             }
         });
         emitters.removeAll(deadEmitters);
-        pushyService.sendPushNotification("check-in");
+        pushyService.sendPushNotification(message);
         return "Event triggered successfully to " + emitters.size() + " subscribers";
     }
 }

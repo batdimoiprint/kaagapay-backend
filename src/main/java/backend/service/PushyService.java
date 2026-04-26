@@ -32,7 +32,9 @@ public class PushyService {
         String url = "https://api.pushy.me/push?api_key=" + secretApiKey;
 
         Map<String, Object> data = new HashMap<>();
-        data.put("alert", alert);
+        data.put("message", alert);
+        data.put("title", "Kaagapay Alert");
+        data.put("notificationId", "1234567890");
 
         Map<String, Object> notification = new HashMap<>();
         notification.put("title", "Alert");
