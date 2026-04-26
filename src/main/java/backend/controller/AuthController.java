@@ -74,7 +74,8 @@ public class AuthController {
                     .maxAge(jwtService.getRefreshExpiration() / 1000)
                     .build();
             response.put("message", "Login successful");
-            response.put("userId", String.valueOf(user.getId()));            
+            response.put("userId", String.valueOf(user.getId()));
+            response.put("role", user.getRole());            
             response.put("accessToken", accessToken);
             response.put("refreshToken", refreshToken);
             return ResponseEntity.ok()
