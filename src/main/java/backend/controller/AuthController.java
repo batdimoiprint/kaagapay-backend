@@ -43,18 +43,31 @@ public class AuthController {
         return new RedirectView("/swagger-ui/index.html");
     }
 
+    @Autowired
+    private backend.service.PushyService pushyService;
+
     @PostMapping(value = "/login")
-    @Operation(summary = "User Login", description = "Login using username and password (form-encoded or query params) to get JWT tokens")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Login successful. Returns access token, refresh token in cookies, and user ID."),
-        @ApiResponse(responseCode = "401", description = "Unauthorized. Invalid username or password.")
+    @Operation(summary = "User Login", description = "Login using username and password to get JWT tokens and register device token")
+    @io.swagger.v3.oas.annotations.Parameters({
+        @io.swagger.v3.oas.annotations.Parameter(name = "usernameOrEmail", example = "johndoe", description = "Username or Email address"),
+        @io.swagger.v3.oas.annotations.Parameter(name = "password", example = "password123", description = "User password"),
+        @io.swagger.v3.oas.annotations.Parameter(name = "deviceToken", example = "f8W...z2", description = "Optional device token for push notifications")
     })
-    public ResponseEntity<Map<String, String>> login(@ModelAttribute LoginRequest loginRequest) {
-        Optional<User> userOpt = userRepository.findByUsername(loginRequest.getUsernameOrEmail());
+    public ResponseEntity<Map<String, String>> login(@RequestParam Map<String, String> loginData) {
+        String usernameOrEmail = loginData.get("usernameOrEmail");
+        String password = loginData.get("password");
+        String deviceToken = loginData.get("deviceToken");
+
+        Optional<User> userOpt = userRepository.findByUsername(usernameOrEmail);
 
         Map<String, String> response = new HashMap<>();
-        if (userOpt.isPresent() && passwordEncoder.matches(loginRequest.getPassword(), userOpt.get().getPassword())) {
+        if (userOpt.isPresent() && passwordEncoder.matches(password, userOpt.get().getPassword())) {
             User user = userOpt.get();
+            
+            if (deviceToken != null && !deviceToken.isEmpty()) {
+                pushyService.storeToken(user, deviceToken);
+            }
+
             String accessToken = jwtService.generateToken(user.getId(), user.getUsername());
             String refreshToken = jwtService.generateRefreshToken(user.getUsername());
 
@@ -120,6 +133,63 @@ public class AuthController {
         Map<String, String> response = new HashMap<>();
         response.put("message", "User " + registrationRequest.getUsername() + " registered successfully!");
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "User Logout", description = "Logs out the user, clears authentication cookies, and optionally removes the device token from the notification service")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Logout successful. Authentication cookies are cleared."),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    public ResponseEntity<Map<String, String>> logout(
+            @io.swagger.v3.oas.annotations.Parameter(description = "Optional device token to remove from the push notification service", example = "f8W...z2")
+            @RequestParam(required = false) String deviceToken) {
+        
+        if (deviceToken != null && !deviceToken.isEmpty()) {
+            pushyService.removeToken(deviceToken);
+        }
+
+        ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(0)
+                .build();
+
+        ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(0)
+                .build();
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Logout successful");
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+                .body(response);
+    }
+
+    @PostMapping("/device-login")
+    @Operation(summary = "Device Login", description = "Associate a user ID with a device token")
+    @io.swagger.v3.oas.annotations.Parameters({
+        @io.swagger.v3.oas.annotations.Parameter(name = "userId", example = "1", description = "ID of the user"),
+        @io.swagger.v3.oas.annotations.Parameter(name = "deviceToken", example = "f8W...z2", description = "Device token to associate")
+    })
+    public ResponseEntity<Map<String, String>> deviceLogin(@RequestParam Map<String, String> requestData) {
+        Long userId = Long.valueOf(requestData.get("userId"));
+        String deviceToken = requestData.get("deviceToken");
+
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isPresent()) {
+            pushyService.storeToken(userOpt.get(), deviceToken);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Device registered successfully");
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(404).body(Map.of("message", "User not found"));
+        }
     }
 
     @PostMapping("/refresh-token")

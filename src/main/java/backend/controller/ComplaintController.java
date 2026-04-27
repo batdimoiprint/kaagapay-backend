@@ -37,6 +37,9 @@ public class ComplaintController {
     @Autowired
     private JwtService jwtService;
 
+    @Autowired
+    private backend.service.PushyService pushyService;
+
     private Long extractUserIdFromRequest(HttpServletRequest request) {
         String jwt = null;
         String authHeader = request.getHeader("Authorization");
@@ -127,11 +130,20 @@ public class ComplaintController {
         }
 
         Complaint complaint = complaintOpt.get();
+        String oldStatus = complaint.getStatus();
         if (update.getStatus() != null) {
             complaint.setStatus(update.getStatus());
         }
 
-        return ResponseEntity.ok(complaintRepository.save(complaint));
+        Complaint savedComplaint = complaintRepository.save(complaint);
+
+        // Send push notification to the user who filed the complaint
+        if (savedComplaint.getUser() != null && update.getStatus() != null && !update.getStatus().equals(oldStatus)) {
+            String message = "Your complaint #" + id + " status has been updated to " + update.getStatus();
+            pushyService.sendPushNotificationToUser(savedComplaint.getUser(), message);
+        }
+
+        return ResponseEntity.ok(savedComplaint);
     }
 
     @PatchMapping("/{id}/remarks")

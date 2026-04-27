@@ -42,11 +42,12 @@ public class SecurityConfig {
                 .requestMatchers(
                     AntPathRequestMatcher.antMatcher("/"),
                     AntPathRequestMatcher.antMatcher("/login"),
+                    AntPathRequestMatcher.antMatcher("/logout"),
                     AntPathRequestMatcher.antMatcher("/me"),
                     AntPathRequestMatcher.antMatcher("/register"),
                     AntPathRequestMatcher.antMatcher("/refresh-token"),
                     AntPathRequestMatcher.antMatcher("/hello"),
-                    AntPathRequestMatcher.antMatcher("/event"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/event/**"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/announcement/**"),
                     AntPathRequestMatcher.antMatcher("/device/**"),
                     AntPathRequestMatcher.antMatcher("/sse.html"),
@@ -60,6 +61,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
+            .logout(AbstractHttpConfigurer::disable)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

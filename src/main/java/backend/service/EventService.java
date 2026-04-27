@@ -45,7 +45,7 @@ public class EventService {
             }
         });
         emitters.removeAll(deadEmitters);
-        pushyService.sendPushNotification(alertMessage);
+        pushyService.sendPushNotificationToAll(alertMessage);
         return emitters.size();
     }
 }

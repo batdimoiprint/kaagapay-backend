@@ -1,17 +1,15 @@
 package backend.controller;
 
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.List;
-
-@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST})
+@CrossOrigin(originPatterns = "*", allowCredentials = "true", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST})
 @RestController
 @RequestMapping("/event")
 @Tag(name = "Event (SSE)", description = "Server-Sent Events endpoints")
@@ -34,10 +32,15 @@ public class EventController {
     }
 
     @Operation(summary = "Trigger SSE Event", description = "Send a custom alert message to all connected SSE clients and via push notification.")
-    @PostMapping(consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public String triggerEvent(
+    @SecurityRequirement(name = "accessTokenCookie")
+    @PostMapping
+    public ResponseEntity<String> triggerEvent(
+            Authentication authentication,
             @io.swagger.v3.oas.annotations.Parameter(description = "Message to send (optional, defaults to 'check-in')")
             @RequestParam(required = false) String message) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).body("Unauthorized: Missing or invalid access token");
+        }
         
         String alertMessage = "check-in";
         if (message != null && !message.isEmpty()) {
@@ -45,6 +48,8 @@ public class EventController {
         }
 
         int count = eventService.broadcast(alertMessage);
-        return "Event triggered successfully to " + count + " subscribers";
+        return ResponseEntity.ok(
+                "Event triggered successfully by " + authentication.getName() + " to " + count + " subscribers"
+        );
     }
 }
