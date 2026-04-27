@@ -17,11 +17,10 @@ import java.util.List;
 @Tag(name = "Event (SSE)", description = "Server-Sent Events endpoints")
 public class EventController {
 
-    private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
-    private final backend.service.PushyService pushyService;
+    private final backend.service.EventService eventService;
 
-    public EventController(backend.service.PushyService pushyService) {
-        this.pushyService = pushyService;
+    public EventController(backend.service.EventService eventService) {
+        this.eventService = eventService;
     }
 
     @Operation(summary = "Subscribe to SSE", description = "Clients connect here to keep an open connection for Server-Sent Events.")
@@ -31,50 +30,21 @@ public class EventController {
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Connection", "keep-alive");
         
-        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE); // Keep connection open indefinitely
-        emitters.add(emitter);
-
-        emitter.onCompletion(() -> emitters.remove(emitter));
-        emitter.onTimeout(() -> emitters.remove(emitter));
-        emitter.onError((e) -> emitters.remove(emitter));
-
-        try {
-            // Send an initial dummy event to establish the connection properly and send the correct headers immediately
-            emitter.send(SseEmitter.event().name("init").data("connected"));
-        } catch (IOException e) {
-            emitters.remove(emitter);
-        }
-
-        return emitter;
+        return eventService.subscribe();
     }
 
     @Operation(summary = "Trigger SSE Event", description = "Send a custom alert message to all connected SSE clients and via push notification.")
-    @PostMapping()
+    @PostMapping(consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public String triggerEvent(
             @io.swagger.v3.oas.annotations.Parameter(description = "Message to send (optional, defaults to 'check-in')")
-            @RequestParam(required = false) String message,
-            @RequestBody(required = false) Map<String, String> body) {
+            @RequestParam(required = false) String message) {
         
         String alertMessage = "check-in";
         if (message != null && !message.isEmpty()) {
             alertMessage = message;
-        } else if (body != null && body.containsKey("message")) {
-            alertMessage = body.get("message");
         }
 
-        List<SseEmitter> deadEmitters = new CopyOnWriteArrayList<>();
-        String finalAlertMessage = alertMessage;
-        emitters.forEach(emitter -> {
-            try {
-                // SseEmitter automatically formats the output to `data: {"alert": "message"}\n\n`
-                emitter.send(SseEmitter.event()
-                        .data("{\"alert\": \"" + finalAlertMessage + "\"}"));
-            } catch (IOException e) {
-                deadEmitters.add(emitter);
-            }
-        });
-        emitters.removeAll(deadEmitters);
-        pushyService.sendPushNotification(alertMessage);
-        return "Event triggered successfully to " + emitters.size() + " subscribers";
+        int count = eventService.broadcast(alertMessage);
+        return "Event triggered successfully to " + count + " subscribers";
     }
 }

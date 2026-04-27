@@ -47,6 +47,7 @@ public class SecurityConfig {
                     AntPathRequestMatcher.antMatcher("/refresh-token"),
                     AntPathRequestMatcher.antMatcher("/hello"),
                     AntPathRequestMatcher.antMatcher("/event"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/announcement/**"),
                     AntPathRequestMatcher.antMatcher("/device/**"),
                     AntPathRequestMatcher.antMatcher("/sse.html"),
                     AntPathRequestMatcher.antMatcher("/static/**"),
