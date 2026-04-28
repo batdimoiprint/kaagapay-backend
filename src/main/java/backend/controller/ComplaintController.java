@@ -222,7 +222,17 @@ public class ComplaintController {
     })
     public ResponseEntity<?> attachMedia(@PathVariable Long id,
                                          @PathVariable String mediaType,
-                                         @RequestBody byte[] fileBytes) {
+                         @RequestBody byte[] fileBytes,
+                         HttpServletRequest httpRequest) {
+        System.out.println("[POST /complaints/" + id + "/attachMedia/" + mediaType + "] method=" + httpRequest.getMethod()
+            + ", uri=" + httpRequest.getRequestURI()
+            + ", contentType=" + httpRequest.getContentType()
+            + ", contentLength=" + httpRequest.getContentLengthLong()
+            + ", contentLengthHeader=" + httpRequest.getHeader("Content-Length")
+            + ", accept=" + httpRequest.getHeader("Accept")
+            + ", userAgent=" + httpRequest.getHeader("User-Agent")
+            + ", bodyLength=" + (fileBytes != null ? fileBytes.length : -1));
+
         Optional<Complaint> complaintOpt = complaintRepository.findById(id);
         if (complaintOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -230,11 +240,27 @@ public class ComplaintController {
 
         Complaint complaint = complaintOpt.get();
         try {
+            if (fileBytes != null && fileBytes.length > 0) {
+                int previewLength = Math.min(fileBytes.length, 12);
+                StringBuilder preview = new StringBuilder();
+                for (int i = 0; i < previewLength; i++) {
+                    preview.append(String.format("%02X", fileBytes[i]));
+                    if (i < previewLength - 1) {
+                        preview.append(' ');
+                    }
+                }
+                System.out.println("[POST /complaints/" + id + "/attachMedia/" + mediaType + "] firstBytes=" + preview);
+            } else {
+                System.out.println("[POST /complaints/" + id + "/attachMedia/" + mediaType + "] fileBytes is empty");
+            }
+
             String url;
             if ("image".equalsIgnoreCase(mediaType)) {
+                System.out.println("[POST /complaints/" + id + "/attachMedia/" + mediaType + "] uploading as image");
                 url = cloudinaryService.uploadImage(fileBytes);
                 complaint.getPictureUrl().add(url);
             } else if ("video".equalsIgnoreCase(mediaType)) {
+                System.out.println("[POST /complaints/" + id + "/attachMedia/" + mediaType + "] uploading as video");
                 url = cloudinaryService.uploadVideo(fileBytes);
                 complaint.getVideoUrl().add(url);
             } else {
@@ -242,9 +268,14 @@ public class ComplaintController {
             }
 
             Complaint saved = complaintRepository.save(complaint);
+            System.out.println("[POST /complaints/" + id + "/attachMedia/" + mediaType + "] saved complaint id=" + saved.getId());
             return ResponseEntity.ok(saved);
         } catch (IOException e) {
+            System.out.println("[POST /complaints/" + id + "/attachMedia/" + mediaType + "] IOException during upload: " + e.getMessage());
             return ResponseEntity.status(500).body("Error uploading media: " + e.getMessage());
+        } catch (RuntimeException e) {
+            System.out.println("[POST /complaints/" + id + "/attachMedia/" + mediaType + "] RuntimeException during upload: " + e.getMessage());
+            return ResponseEntity.status(500).body("Unexpected upload error: " + e.getMessage());
         }
     }
 
