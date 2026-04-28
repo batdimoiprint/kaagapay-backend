@@ -69,7 +69,7 @@ public class ComplaintController {
         return null;
     }
 
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(consumes = MediaType.ALL_VALUE)
     @Operation(summary = "Create a new complaint")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Complaint created successfully"),
@@ -82,6 +82,16 @@ public class ComplaintController {
             @Parameter(description = "Optional video attachment", content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = @Schema(type = "string", format = "binary")))
             @RequestParam(value = "video", required = false) MultipartFile video,
             HttpServletRequest httpRequest) {
+        System.out.println("[POST /complaints] method=" + httpRequest.getMethod()
+                + ", uri=" + httpRequest.getRequestURI()
+                + ", contentType=" + httpRequest.getContentType()
+                + ", complaintType=" + request.getComplaintType()
+                + ", dateOfIncident=" + request.getDateOfIncident()
+                + ", description=" + request.getDescription()
+                + ", location=" + request.getLocation()
+                + ", photo=" + (photo != null ? photo.getOriginalFilename() + " (" + photo.getSize() + " bytes)" : "null")
+                + ", video=" + (video != null ? video.getOriginalFilename() + " (" + video.getSize() + " bytes)" : "null"));
+
         Long userId = extractUserIdFromRequest(httpRequest);
         if (userId == null) {
             return ResponseEntity.status(401).body("Unauthorized: Invalid or missing token");
@@ -92,13 +102,17 @@ public class ComplaintController {
             return ResponseEntity.badRequest().body("User not found");
         }
 
+        User user = userOpt.get();
+        System.out.println("[POST /complaints] authenticatedUser id=" + user.getId()
+                + ", username=" + user.getUsername());
+
         Complaint complaint = new Complaint();
         complaint.setComplaintType(request.getComplaintType());
         complaint.setDateOfIncident(request.getDateOfIncident());
         complaint.setDescription(request.getDescription());
         complaint.setLocation(request.getLocation());
         complaint.setStatus("PENDING");
-        complaint.setUser(userOpt.get());
+        complaint.setUser(user);
 
         try {
             if (photo != null && !photo.isEmpty()) {
@@ -198,7 +212,7 @@ public class ComplaintController {
         return ResponseEntity.ok(complaintRepository.save(complaint));
     }
 
-    @PatchMapping(value = "/{id}/attachMedia", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/{id}/attachMedia/{mediaType}", consumes = MediaType.ALL_VALUE)
     @Operation(summary = "Attach media (image or video) to a complaint")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Media attached successfully"),
@@ -207,8 +221,8 @@ public class ComplaintController {
         @ApiResponse(responseCode = "500", description = "Server error during media upload")
     })
     public ResponseEntity<?> attachMedia(@PathVariable Long id,
-                                         @RequestParam("file") MultipartFile file,
-                                         @RequestParam("mediaType") String mediaType) {
+                                         @PathVariable String mediaType,
+                                         @RequestBody byte[] fileBytes) {
         Optional<Complaint> complaintOpt = complaintRepository.findById(id);
         if (complaintOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -218,10 +232,10 @@ public class ComplaintController {
         try {
             String url;
             if ("image".equalsIgnoreCase(mediaType)) {
-                url = cloudinaryService.uploadImage(file.getBytes());
+                url = cloudinaryService.uploadImage(fileBytes);
                 complaint.getPictureUrl().add(url);
             } else if ("video".equalsIgnoreCase(mediaType)) {
-                url = cloudinaryService.uploadVideo(file.getBytes());
+                url = cloudinaryService.uploadVideo(fileBytes);
                 complaint.getVideoUrl().add(url);
             } else {
                 return ResponseEntity.badRequest().body("Invalid mediaType. Must be 'image' or 'video'.");
