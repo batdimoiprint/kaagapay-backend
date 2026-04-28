@@ -32,6 +32,14 @@ public class Complaint {
     @JsonIgnore
     private User user;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "picture_url", columnDefinition = "jsonb")
+    private List<String> pictureUrl = new ArrayList<>();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "video_url", columnDefinition = "jsonb")
+    private List<String> videoUrl = new ArrayList<>();
+
     public Complaint() {}
 
     public Long getId() {
@@ -96,6 +104,22 @@ public class Complaint {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public List<String> getPictureUrl() {
+        return pictureUrl;
+    }
+
+    public void setPictureUrl(List<String> pictureUrl) {
+        this.pictureUrl = pictureUrl;
+    }
+
+    public List<String> getVideoUrl() {
+        return videoUrl;
+    }
+
+    public void setVideoUrl(List<String> videoUrl) {
+        this.videoUrl = videoUrl;
     }
 
     public Long getUserId() {
