@@ -2,9 +2,11 @@ package backend.service;
 
 import backend.entity.DeviceToken;
 import backend.entity.User;
+import backend.logging.LogUtil;
 import backend.repository.DeviceTokenRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -15,6 +17,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class PushyService {
+
+    private static final Logger log = LogUtil.getLogger(PushyService.class);
 
     @Value("${pushy.secret.api.key}")
     private String secretApiKey;
@@ -50,7 +54,7 @@ public class PushyService {
     public void sendPushNotificationToUser(User user, String alert) {
         List<DeviceToken> deviceTokens = deviceTokenRepository.findByUser(user);
         if (deviceTokens.isEmpty()) {
-            System.out.println("No device tokens registered for user: " + user.getId());
+            log.debug("No device tokens registered for userId={}", user.getId());
             return;
         }
 
@@ -64,7 +68,7 @@ public class PushyService {
     public void sendPushNotificationToAll(String alert) {
         List<DeviceToken> deviceTokens = deviceTokenRepository.findAll();
         if (deviceTokens.isEmpty()) {
-            System.out.println("No device tokens registered.");
+            log.debug("No device tokens registered.");
             return;
         }
 
@@ -98,9 +102,9 @@ public class PushyService {
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
         try {
             ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
-            System.out.println("Pushy response: " + response.getBody());
+            log.debug("Pushy response body={}", response.getBody());
         } catch (Exception e) {
-            System.err.println("Error sending push notification: " + e.getMessage());
+            log.error("Error sending push notification", e);
         }
     }
 }

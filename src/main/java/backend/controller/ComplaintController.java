@@ -9,6 +9,7 @@ import backend.model.Remark;
 import backend.repository.ComplaintRepository;
 import backend.repository.UserRepository;
 import backend.security.JwtService;
+import backend.logging.LogUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
+import org.slf4j.Logger;
 import java.io.IOException;
 
 import java.time.LocalDateTime;
@@ -34,6 +36,8 @@ import java.util.Optional;
 @RequestMapping("/complaints")
 @Tag(name = "Complaints", description = "Endpoints for managing user complaints")
 public class ComplaintController {
+
+    private static final Logger log = LogUtil.getLogger(ComplaintController.class);
 
     @Autowired
     private ComplaintRepository complaintRepository;
@@ -82,15 +86,18 @@ public class ComplaintController {
             @Parameter(description = "Optional video attachment", content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = @Schema(type = "string", format = "binary")))
             @RequestParam(value = "video", required = false) MultipartFile video,
             HttpServletRequest httpRequest) {
-        System.out.println("[POST /complaints] method=" + httpRequest.getMethod()
-                + ", uri=" + httpRequest.getRequestURI()
-                + ", contentType=" + httpRequest.getContentType()
-                + ", complaintType=" + request.getComplaintType()
-                + ", dateOfIncident=" + request.getDateOfIncident()
-                + ", description=" + request.getDescription()
-                + ", location=" + request.getLocation()
-                + ", photo=" + (photo != null ? photo.getOriginalFilename() + " (" + photo.getSize() + " bytes)" : "null")
-                + ", video=" + (video != null ? video.getOriginalFilename() + " (" + video.getSize() + " bytes)" : "null"));
+        log.debug(
+                "[POST /complaints] method={} uri={} contentType={} complaintType={} dateOfIncident={} description={} location={} photo={} video={}",
+                httpRequest.getMethod(),
+                httpRequest.getRequestURI(),
+                httpRequest.getContentType(),
+                request.getComplaintType(),
+                request.getDateOfIncident(),
+                request.getDescription(),
+                request.getLocation(),
+                photo != null ? photo.getOriginalFilename() + " (" + photo.getSize() + " bytes)" : "null",
+                video != null ? video.getOriginalFilename() + " (" + video.getSize() + " bytes)" : "null"
+        );
 
         Long userId = extractUserIdFromRequest(httpRequest);
         if (userId == null) {
@@ -103,8 +110,7 @@ public class ComplaintController {
         }
 
         User user = userOpt.get();
-        System.out.println("[POST /complaints] authenticatedUser id=" + user.getId()
-                + ", username=" + user.getUsername());
+        log.debug("[POST /complaints] authenticatedUser id={} username={}", user.getId(), user.getUsername());
 
         Complaint complaint = new Complaint();
         complaint.setComplaintType(request.getComplaintType());
@@ -122,6 +128,7 @@ public class ComplaintController {
                 complaint.getVideoUrl().add(cloudinaryService.uploadVideo(video.getBytes()));
             }
         } catch (IOException e) {
+            log.error("[POST /complaints] Failed to upload media", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to upload media: " + e.getMessage());
         }
 
@@ -224,14 +231,18 @@ public class ComplaintController {
                                          @PathVariable String mediaType,
                          @RequestBody byte[] fileBytes,
                          HttpServletRequest httpRequest) {
-        System.out.println("[POST /complaints/" + id + "/attachMedia/" + mediaType + "] method=" + httpRequest.getMethod()
-            + ", uri=" + httpRequest.getRequestURI()
-            + ", contentType=" + httpRequest.getContentType()
-            + ", contentLength=" + httpRequest.getContentLengthLong()
-            + ", contentLengthHeader=" + httpRequest.getHeader("Content-Length")
-            + ", accept=" + httpRequest.getHeader("Accept")
-            + ", userAgent=" + httpRequest.getHeader("User-Agent")
-            + ", bodyLength=" + (fileBytes != null ? fileBytes.length : -1));
+        log.debug(
+                "[POST /complaints/{}/attachMedia/{}] method={} uri={} contentType={} contentLength={} accept={} userAgent={} bodyLength={}",
+                id,
+                mediaType,
+                httpRequest.getMethod(),
+                httpRequest.getRequestURI(),
+                httpRequest.getContentType(),
+                httpRequest.getContentLengthLong(),
+                httpRequest.getHeader("Accept"),
+                httpRequest.getHeader("User-Agent"),
+                fileBytes != null ? fileBytes.length : -1
+        );
 
         Optional<Complaint> complaintOpt = complaintRepository.findById(id);
         if (complaintOpt.isEmpty()) {
@@ -249,18 +260,18 @@ public class ComplaintController {
                         preview.append(' ');
                     }
                 }
-                System.out.println("[POST /complaints/" + id + "/attachMedia/" + mediaType + "] firstBytes=" + preview);
+                log.debug("[POST /complaints/{}/attachMedia/{}] firstBytes={}", id, mediaType, preview);
             } else {
-                System.out.println("[POST /complaints/" + id + "/attachMedia/" + mediaType + "] fileBytes is empty");
+                log.debug("[POST /complaints/{}/attachMedia/{}] fileBytes is empty", id, mediaType);
             }
 
             String url;
             if ("image".equalsIgnoreCase(mediaType)) {
-                System.out.println("[POST /complaints/" + id + "/attachMedia/" + mediaType + "] uploading as image");
+                log.debug("[POST /complaints/{}/attachMedia/{}] uploading as image", id, mediaType);
                 url = cloudinaryService.uploadImage(fileBytes);
                 complaint.getPictureUrl().add(url);
             } else if ("video".equalsIgnoreCase(mediaType)) {
-                System.out.println("[POST /complaints/" + id + "/attachMedia/" + mediaType + "] uploading as video");
+                log.debug("[POST /complaints/{}/attachMedia/{}] uploading as video", id, mediaType);
                 url = cloudinaryService.uploadVideo(fileBytes);
                 complaint.getVideoUrl().add(url);
             } else {
@@ -268,13 +279,13 @@ public class ComplaintController {
             }
 
             Complaint saved = complaintRepository.save(complaint);
-            System.out.println("[POST /complaints/" + id + "/attachMedia/" + mediaType + "] saved complaint id=" + saved.getId());
+            log.debug("[POST /complaints/{}/attachMedia/{}] saved complaint id={}", id, mediaType, saved.getId());
             return ResponseEntity.ok(saved);
         } catch (IOException e) {
-            System.out.println("[POST /complaints/" + id + "/attachMedia/" + mediaType + "] IOException during upload: " + e.getMessage());
+            log.error("[POST /complaints/{}/attachMedia/{}] IOException during upload", id, mediaType, e);
             return ResponseEntity.status(500).body("Error uploading media: " + e.getMessage());
         } catch (RuntimeException e) {
-            System.out.println("[POST /complaints/" + id + "/attachMedia/" + mediaType + "] RuntimeException during upload: " + e.getMessage());
+            log.error("[POST /complaints/{}/attachMedia/{}] RuntimeException during upload", id, mediaType, e);
             return ResponseEntity.status(500).body("Unexpected upload error: " + e.getMessage());
         }
     }
