@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
@@ -31,6 +32,7 @@ import java.util.Map;
  * - Request processing time
  */
 @Component
+@Profile("!prod")
 @Order(Ordered.HIGHEST_PRECEDENCE + 2)
 public class HttpRequestLoggingFilter extends OncePerRequestFilter {
 

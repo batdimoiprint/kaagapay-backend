@@ -73,17 +73,17 @@ public class AuthController {
 
             ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", accessToken)
                     .httpOnly(true)
-                    .secure(false)
+                    .secure(true)
                     .path("/")
-                    .sameSite("Lax")
+                    .sameSite("None")
                     .maxAge(jwtService.getJwtExpiration() / 1000)
                     .build();
 
             ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", refreshToken)
                     .httpOnly(true)
-                    .secure(false)
+                    .secure(true)
                     .path("/")
-                    .sameSite("Lax")
+                    .sameSite("None")
                     .maxAge(jwtService.getRefreshExpiration() / 1000)
                     .build();
             response.put("message", "Login successful");
@@ -151,15 +151,17 @@ public class AuthController {
 
         ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", "")
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path("/")
+                .sameSite("None")
                 .maxAge(0)
                 .build();
 
         ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path("/")
+                .sameSite("None")
                 .maxAge(0)
                 .build();
 
