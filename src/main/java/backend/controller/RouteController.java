@@ -5,14 +5,16 @@ import backend.model.Graph;
 import backend.model.Node;
 import backend.service.DijkstraService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.InputStream;
 import java.util.*;
@@ -29,6 +31,30 @@ public class RouteController {
     private Graph graph;
 
     private static final String SOURCE_ID = "node_8";
+
+    public static class RouteRequest {
+        @Schema(description = "Latitude of destination", example = "14.716432646016036")
+        private double lat;
+
+        @Schema(description = "Longitude of destination", example = "121.030132611756")
+        private double lng;
+
+        public double getLat() {
+            return lat;
+        }
+
+        public void setLat(double lat) {
+            this.lat = lat;
+        }
+
+        public double getLng() {
+            return lng;
+        }
+
+        public void setLng(double lng) {
+            this.lng = lng;
+        }
+    }
 
     @PostConstruct
     public void buildGraph() throws Exception {
@@ -56,22 +82,24 @@ public class RouteController {
 
     @Operation(
         summary = "Get shortest path",
-        description = "Input a destination lat/lng. The source is always fixed at node_8 (Brgy. Capri). Returns the shortest path as a list of coordinates."
+        description = "Submit destination lat and lng as form fields. Source is always fixed at node_8.",
+        requestBody = @RequestBody(
+            required = true,
+            content = @Content(
+                mediaType = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
+                schema = @Schema(implementation = RouteRequest.class)
+            )
+        )
     )
-    @PostMapping(consumes = org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    @PostMapping(consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public Map<String, Object> getRoute(
-        @io.swagger.v3.oas.annotations.Parameter(description = "Latitude of destination", example = "14.7185")
-        @RequestParam double lat,
-        @io.swagger.v3.oas.annotations.Parameter(description = "Longitude of destination", example = "121.0295")
-        @RequestParam double lng,
-        Authentication authentication
+        @ModelAttribute RouteRequest request,
+        @Parameter(hidden = true) Authentication authentication
     ) {
-        // Authenticated user information available from JwtAuthenticationFilter
         String username = authentication != null ? authentication.getName() : "Anonymous";
         System.out.println("Route requested by user: " + username);
 
-        // Find nearest node to the input lat/lng
-        String destId = findNearestNode(lat, lng);
+        String destId = findNearestNode(request.getLat(), request.getLng());
 
         Map<String, Object> response = new HashMap<>();
 
@@ -104,7 +132,7 @@ public class RouteController {
 
     @Operation(
         summary = "Get all nodes",
-        description = "Returns all nodes in the graph with their ID, lat, and lng. Use this to find valid destination node IDs."
+        description = "Returns all nodes in the graph with their ID, lat, and lng."
     )
     @GetMapping("/nodes")
     public List<Map<String, Object>> getNodes() {
@@ -121,13 +149,13 @@ public class RouteController {
 
     @Operation(
         summary = "Find nearest node to coordinates",
-        description = "Input any lat/lng and get the nearest graph node back. Useful for debugging which node your destination maps to."
+        description = "Input any lat/lng and get the nearest graph node back."
     )
     @GetMapping("/nearest")
     public Map<String, Object> getNearestNode(
-        @io.swagger.v3.oas.annotations.Parameter(description = "Latitude", example = "14.7185")
+        @Parameter(description = "Latitude", example = "14.7185", required = true)
         @RequestParam double lat,
-        @io.swagger.v3.oas.annotations.Parameter(description = "Longitude", example = "121.0295")
+        @Parameter(description = "Longitude", example = "121.0295", required = true)
         @RequestParam double lng
     ) {
         String nearestId = findNearestNode(lat, lng);
@@ -141,7 +169,6 @@ public class RouteController {
         return result;
     }
 
-    // Finds the nearest node in the graph to a given lat/lng
     private String findNearestNode(double lat, double lng) {
         String nearestId = null;
         double minDist = Double.MAX_VALUE;
