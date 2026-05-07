@@ -30,16 +30,6 @@ public class RouteController {
 
     private static final String SOURCE_ID = "node_8";
 
-    // DTO for Swagger input
-    @Schema(description = "Destination coordinates from the user")
-    public static class RouteRequest {
-        @Schema(description = "Latitude of destination", example = "14.7185")
-        public double lat;
-
-        @Schema(description = "Longitude of destination", example = "121.0295")
-        public double lng;
-    }
-
     @PostConstruct
     public void buildGraph() throws Exception {
         graph = new Graph();
@@ -68,14 +58,12 @@ public class RouteController {
         summary = "Get shortest path",
         description = "Input a destination lat/lng. The source is always fixed at node_8 (Brgy. Capri). Returns the shortest path as a list of coordinates."
     )
-    @PostMapping
+    @PostMapping(consumes = org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public Map<String, Object> getRoute(
-        @RequestBody(
-            description = "Destination lat/lng",
-            required = true,
-            content = @Content(schema = @Schema(implementation = RouteRequest.class))
-        )
-        @org.springframework.web.bind.annotation.RequestBody RouteRequest request,
+        @io.swagger.v3.oas.annotations.Parameter(description = "Latitude of destination", example = "14.7185")
+        @RequestParam double lat,
+        @io.swagger.v3.oas.annotations.Parameter(description = "Longitude of destination", example = "121.0295")
+        @RequestParam double lng,
         Authentication authentication
     ) {
         // Authenticated user information available from JwtAuthenticationFilter
@@ -83,7 +71,7 @@ public class RouteController {
         System.out.println("Route requested by user: " + username);
 
         // Find nearest node to the input lat/lng
-        String destId = findNearestNode(request.lat, request.lng);
+        String destId = findNearestNode(lat, lng);
 
         Map<String, Object> response = new HashMap<>();
 
