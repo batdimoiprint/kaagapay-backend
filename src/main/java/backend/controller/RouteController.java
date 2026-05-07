@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
 
 import java.io.InputStream;
 import java.util.*;
@@ -74,8 +75,13 @@ public class RouteController {
             required = true,
             content = @Content(schema = @Schema(implementation = RouteRequest.class))
         )
-        @org.springframework.web.bind.annotation.RequestBody RouteRequest request
+        @org.springframework.web.bind.annotation.RequestBody RouteRequest request,
+        Authentication authentication
     ) {
+        // Authenticated user information available from JwtAuthenticationFilter
+        String username = authentication != null ? authentication.getName() : "Anonymous";
+        System.out.println("Route requested by user: " + username);
+
         // Find nearest node to the input lat/lng
         String destId = findNearestNode(request.lat, request.lng);
 
