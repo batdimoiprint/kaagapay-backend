@@ -30,6 +30,8 @@ import java.io.IOException;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Optional;
 
 @RestController
@@ -133,6 +135,27 @@ public class ComplaintController {
         }
 
         return ResponseEntity.ok(complaintRepository.save(complaint));
+    }
+
+    @GetMapping("/analytics")
+    @Operation(summary = "Get complaint analytics", description = "Returns total complaints and breakdown by status")
+    public ResponseEntity<Map<String, Object>> getComplaintAnalytics() {
+        long total = complaintRepository.count();
+        long pending = complaintRepository.countByStatusIgnoreCase("PENDING");
+        long inProgress = complaintRepository.countByStatusIgnoreCase("IN_PROGRESS");
+        long onGoing = complaintRepository.countByStatusIgnoreCase("ON_GOING");
+        long completed = complaintRepository.countByStatusIgnoreCase("COMPLETED");
+        long withdrawn = complaintRepository.countByStatusIgnoreCase("WITHDRAWN");
+
+        Map<String, Object> analytics = new HashMap<>();
+        analytics.put("total", total);
+        analytics.put("pending", pending);
+        analytics.put("inProgress", inProgress);
+        analytics.put("onGoing", onGoing);
+        analytics.put("completed", completed);
+        analytics.put("withdrawn", withdrawn);
+
+        return ResponseEntity.ok(analytics);
     }
 
     @GetMapping

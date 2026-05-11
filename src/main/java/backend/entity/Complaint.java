@@ -21,7 +21,7 @@ public class Complaint {
     private LocalDateTime dateOfIncident;
     private String description;
     private String location;
-    private String status; // e.g., PENDING, IN_PROGRESS, RESOLVED
+    private String status; // e.g., PENDING, IN_PROGRESS, ON_GOING, COMPLETED, WITHDRAWN
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
