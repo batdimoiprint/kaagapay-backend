@@ -24,7 +24,7 @@ public class RegistrationRequest {
     @Schema(description = "Email address", example = "johndoe@example.com")
     private String email;
 
-    @Schema(description = "Subdivision", example = "Greenwoods")
+    @Schema(description = "Subdivision", example = "Greenwoods", nullable = true, requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String subdivision;
 
     @Schema(description = "Street name", example = "Mabini")

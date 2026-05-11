@@ -22,6 +22,7 @@ public class User {
     @Column(unique = true)
     private String email;
     
+    @Column(nullable = true)
     private String subdivision;
     private String streetName;
     private String streetNo;
