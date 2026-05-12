@@ -125,4 +125,13 @@ public class Complaint {
     public Long getUserId() {
         return user != null ? user.getId() : null;
     }
+
+    public String getFullname() {
+        if (user != null) {
+            String first = user.getFirstName() != null ? user.getFirstName() : "";
+            String last = user.getLastName() != null ? user.getLastName() : "";
+            return (first + " " + last).trim();
+        }
+        return null;
+    }
 }
