@@ -23,15 +23,26 @@ public class AnalyticsController {
     @Autowired
     private ComplaintRepository complaintRepository;
 
+    @Autowired
+    private backend.service.GreedyAnalyticsService greedyAnalyticsService;
+
     @Operation(summary = "Get total counts for announcements and complaints")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved counts")
     @GetMapping("/summary")
-    public ResponseEntity<AnalyticsSummaryResponse> getAnalyticsSummary() {
+    public ResponseEntity<backend.dto.AnalyticsSummaryResponse> getAnalyticsSummary() {
         long totalAnnouncements = announcementRepository.count();
         long totalComplaints = complaintRepository.count();
 
-        AnalyticsSummaryResponse summary = new AnalyticsSummaryResponse(totalAnnouncements, totalComplaints);
+        backend.dto.AnalyticsSummaryResponse summary = new backend.dto.AnalyticsSummaryResponse(totalAnnouncements, totalComplaints);
         
         return ResponseEntity.ok(summary);
+    }
+
+    @Operation(summary = "Get analytics report generated using Greedy Algorithm", 
+               description = "Efficiently processes incident data into monthly, semi-annual, and annual summaries.")
+    @ApiResponse(responseCode = "200", description = "Successfully generated greedy analytics report")
+    @GetMapping("/greedy-report")
+    public ResponseEntity<backend.dto.GreedyAnalyticsResponse> getGreedyReport() {
+        return ResponseEntity.ok(greedyAnalyticsService.generateGreedyAnalytics());
     }
 }
