@@ -19,8 +19,11 @@ public class Complaint {
 
     private String complaintType;
     private LocalDateTime dateOfIncident;
+    private LocalDateTime createdAt;
     private String description;
     private String location;
+    private Double lat;
+    private Double lng;
     private String status; // e.g., PENDING, IN_PROGRESS, ON_GOING, COMPLETED, WITHDRAWN
     private Integer severityScore;
     private String severityLabel; // LOW, MODERATE, HIGH, CRITICAL
@@ -69,6 +72,14 @@ public class Complaint {
         this.dateOfIncident = dateOfIncident;
     }
 
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
     public String getDescription() {
         return description;
     }
@@ -83,6 +94,22 @@ public class Complaint {
 
     public void setLocation(String location) {
         this.location = location;
+    }
+
+    public Double getLat() {
+        return lat;
+    }
+
+    public void setLat(Double lat) {
+        this.lat = lat;
+    }
+
+    public Double getLng() {
+        return lng;
+    }
+
+    public void setLng(Double lng) {
+        this.lng = lng;
     }
 
     public String getStatus() {

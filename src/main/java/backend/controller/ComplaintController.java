@@ -41,6 +41,11 @@ import java.util.Optional;
 @Tag(name = "Complaints", description = "Endpoints for managing user complaints")
 public class ComplaintController {
 
+    private enum ComplaintSort {
+        SEVERITY,
+        CREATED
+    }
+
     private static final Logger log = LogUtil.getLogger(ComplaintController.class);
 
     @Autowired
@@ -95,7 +100,7 @@ public class ComplaintController {
             @Parameter(description = "Optional video attachment", content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = @Schema(type = "string", format = "binary"))) @RequestParam(value = "video", required = false) MultipartFile video,
             HttpServletRequest httpRequest) {
         log.debug(
-                "[POST /complaints] method={} uri={} contentType={} complaintType={} dateOfIncident={} description={} location={} photo={} video={}",
+            "[POST /complaints] method={} uri={} contentType={} complaintType={} dateOfIncident={} description={} location={} lat={} lng={} photo={} video={}",
                 httpRequest.getMethod(),
                 httpRequest.getRequestURI(),
                 httpRequest.getContentType(),
@@ -103,6 +108,8 @@ public class ComplaintController {
                 request.getDateOfIncident(),
                 request.getDescription(),
                 request.getLocation(),
+            request.getLat(),
+            request.getLng(),
                 photo != null ? photo.getOriginalFilename() + " (" + photo.getSize() + " bytes)" : "null",
                 video != null ? video.getOriginalFilename() + " (" + video.getSize() + " bytes)" : "null");
 
@@ -122,8 +129,11 @@ public class ComplaintController {
         Complaint complaint = new Complaint();
         complaint.setComplaintType(request.getComplaintType());
         complaint.setDateOfIncident(request.getDateOfIncident());
+        complaint.setCreatedAt(LocalDateTime.now());
         complaint.setDescription(request.getDescription());
         complaint.setLocation(request.getLocation());
+        complaint.setLat(request.getLat());
+        complaint.setLng(request.getLng());
         complaint.setStatus("PENDING");
         complaint.setUser(user);
 
@@ -172,8 +182,19 @@ public class ComplaintController {
     @GetMapping
     @Operation(summary = "Get all complaints")
     @ApiResponse(responseCode = "200", description = "Returns a list of all complaints")
-    public List<Complaint> getAllComplaints() {
-        return complaintPriorityService.sortByHighestSeverity(complaintRepository.findAll());
+    public ResponseEntity<?> getAllComplaints(@RequestParam(value = "sort", required = false, defaultValue = "SEVERITY") String sort) {
+        ComplaintSort complaintSort;
+        try {
+            complaintSort = ComplaintSort.valueOf(sort.toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body("Invalid sort value. Use SEVERITY or CREATED.");
+        }
+
+        List<Complaint> complaints = complaintRepository.findAll();
+        if (complaintSort == ComplaintSort.CREATED) {
+            return ResponseEntity.ok(complaintPriorityService.sortByNewestFirst(complaints));
+        }
+        return ResponseEntity.ok(complaintPriorityService.sortByHighestSeverity(complaints));
     }
 
     @GetMapping("-complaints")

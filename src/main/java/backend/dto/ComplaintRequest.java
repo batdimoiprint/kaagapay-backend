@@ -18,6 +18,12 @@ public class ComplaintRequest {
     @Schema(description = "Location of the incident", example = "123 Main St, Barangay San Jose")
     private String location;
 
+    @Schema(description = "Latitude of the incident location", example = "14.716432646016036")
+    private Double lat;
+
+    @Schema(description = "Longitude of the incident location", example = "121.030132611756")
+    private Double lng;
+
     @Schema(description = "Incident category used for severity scoring", example = "Fire")
     private String incidentType;
 
@@ -66,6 +72,22 @@ public class ComplaintRequest {
 
     public void setLocation(String location) {
         this.location = location;
+    }
+
+    public Double getLat() {
+        return lat;
+    }
+
+    public void setLat(Double lat) {
+        this.lat = lat;
+    }
+
+    public Double getLng() {
+        return lng;
+    }
+
+    public void setLng(Double lng) {
+        this.lng = lng;
     }
 
     public String getIncidentType() {
