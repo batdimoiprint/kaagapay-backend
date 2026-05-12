@@ -77,25 +77,14 @@ public class RouteController {
         }
 
         System.out.println("Loaded: " + nodeList.size()
-            + " nodes, " + edgeList.size() + " edges");
+                + " nodes, " + edgeList.size() + " edges");
     }
 
-    @Operation(
-        summary = "Get shortest path",
-        description = "Submit destination lat and lng as form fields. Source is always fixed at node_8.",
-        requestBody = @RequestBody(
-            required = true,
-            content = @Content(
-                mediaType = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
-                schema = @Schema(implementation = RouteRequest.class)
-            )
-        )
-    )
+    @Operation(summary = "Get shortest path", description = "Submit destination lat and lng as form fields. Source is always fixed at node_8.", requestBody = @RequestBody(required = true, content = @Content(mediaType = MediaType.APPLICATION_FORM_URLENCODED_VALUE, schema = @Schema(implementation = RouteRequest.class))))
     @PostMapping(consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public Map<String, Object> getRoute(
-        @ModelAttribute RouteRequest request,
-        @Parameter(hidden = true) Authentication authentication
-    ) {
+            @ModelAttribute RouteRequest request,
+            @Parameter(hidden = true) Authentication authentication) {
         String username = authentication != null ? authentication.getName() : "Anonymous";
         System.out.println("Route requested by user: " + username);
 
@@ -130,10 +119,7 @@ public class RouteController {
         return response;
     }
 
-    @Operation(
-        summary = "Get all nodes",
-        description = "Returns all nodes in the graph with their ID, lat, and lng."
-    )
+    @Operation(summary = "Get all nodes", description = "Returns all nodes in the graph with their ID, lat, and lng.")
     @GetMapping("/nodes")
     public List<Map<String, Object>> getNodes() {
         List<Map<String, Object>> result = new ArrayList<>();
@@ -147,17 +133,11 @@ public class RouteController {
         return result;
     }
 
-    @Operation(
-        summary = "Find nearest node to coordinates",
-        description = "Input any lat/lng and get the nearest graph node back."
-    )
+    @Operation(summary = "Find nearest node to coordinates", description = "Input any lat/lng and get the nearest graph node back.")
     @GetMapping("/nearest")
     public Map<String, Object> getNearestNode(
-        @Parameter(description = "Latitude", example = "14.7185", required = true)
-        @RequestParam double lat,
-        @Parameter(description = "Longitude", example = "121.0295", required = true)
-        @RequestParam double lng
-    ) {
+            @Parameter(description = "Latitude", example = "14.7185", required = true) @RequestParam double lat,
+            @Parameter(description = "Longitude", example = "121.0295", required = true) @RequestParam double lng) {
         String nearestId = findNearestNode(lat, lng);
         Node n = graph.getNode(nearestId);
         Map<String, Object> result = new HashMap<>();
@@ -165,7 +145,7 @@ public class RouteController {
         result.put("lat", n.getLat());
         result.put("lng", n.getLng());
         result.put("distanceFromInputMeters",
-            graph.haversine(lat, lng, n.getLat(), n.getLng()));
+                graph.haversine(lat, lng, n.getLat(), n.getLng()));
         return result;
     }
 

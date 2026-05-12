@@ -7,11 +7,11 @@ import java.time.LocalDateTime;
 public class ComplaintRequest {
     @Schema(description = "Type of complaint", example = "Street Light Repair")
     private String complaintType;
-    
+
     @Schema(description = "Date and time of incident (ISO-8601)", example = "2024-04-24T10:00:00")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime dateOfIncident;
-    
+
     @Schema(description = "Detailed description of the issue", example = "The street light in front of house #123 is not working.")
     private String description;
 
@@ -33,7 +33,8 @@ public class ComplaintRequest {
     @Schema(description = "Number of people affected by the incident", example = "3")
     private Integer affectedPeopleCount;
 
-    public ComplaintRequest() {}
+    public ComplaintRequest() {
+    }
 
     public String getComplaintType() {
         return complaintType;
