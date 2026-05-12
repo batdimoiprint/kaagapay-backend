@@ -37,7 +37,7 @@ public class AuthController {
     @GetMapping("/")
     @Operation(summary = "Redirect to Swagger UI")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "302", description = "Redirects to Swagger documentation API interface")
+            @ApiResponse(responseCode = "302", description = "Redirects to Swagger documentation API interface")
     })
     public RedirectView redirectToSwagger() {
         return new RedirectView("/swagger-ui/index.html");
@@ -49,9 +49,9 @@ public class AuthController {
     @PostMapping(value = "/login")
     @Operation(summary = "User Login", description = "Login using username and password to get JWT tokens and register device token")
     @io.swagger.v3.oas.annotations.Parameters({
-        @io.swagger.v3.oas.annotations.Parameter(name = "usernameOrEmail", example = "johndoe", description = "Username or Email address"),
-        @io.swagger.v3.oas.annotations.Parameter(name = "password", example = "password123", description = "User password"),
-        @io.swagger.v3.oas.annotations.Parameter(name = "deviceToken", example = "f8W...z2", description = "Optional device token for push notifications")
+            @io.swagger.v3.oas.annotations.Parameter(name = "usernameOrEmail", example = "johndoe", description = "Username or Email address"),
+            @io.swagger.v3.oas.annotations.Parameter(name = "password", example = "password123", description = "User password"),
+            @io.swagger.v3.oas.annotations.Parameter(name = "deviceToken", example = "f8W...z2", description = "Optional device token for push notifications")
     })
     public ResponseEntity<Map<String, String>> login(@RequestParam Map<String, String> loginData) {
         String usernameOrEmail = loginData.get("usernameOrEmail");
@@ -63,7 +63,7 @@ public class AuthController {
         Map<String, String> response = new HashMap<>();
         if (userOpt.isPresent() && passwordEncoder.matches(password, userOpt.get().getPassword())) {
             User user = userOpt.get();
-            
+
             if (deviceToken != null && !deviceToken.isEmpty()) {
                 pushyService.storeToken(user, deviceToken);
             }
@@ -88,7 +88,7 @@ public class AuthController {
                     .build();
             response.put("message", "Login successful");
             response.put("userId", String.valueOf(user.getId()));
-            response.put("role", user.getRole());            
+            response.put("role", user.getRole());
             response.put("accessToken", accessToken);
             response.put("refreshToken", refreshToken);
             return ResponseEntity.ok()
@@ -104,8 +104,8 @@ public class AuthController {
     @PostMapping(value = "/register")
     @Operation(summary = "User Registration", description = "Register a new user with personal details")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "User registered successfully"),
-        @ApiResponse(responseCode = "400", description = "Bad Request. Username already exists or invalid data.")
+            @ApiResponse(responseCode = "200", description = "User registered successfully"),
+            @ApiResponse(responseCode = "400", description = "Bad Request. Username already exists or invalid data.")
     })
     public ResponseEntity<Map<String, String>> register(@ModelAttribute RegistrationRequest registrationRequest) {
         if (userRepository.findByUsername(registrationRequest.getUsername()).isPresent()) {
@@ -120,7 +120,9 @@ public class AuthController {
         user.setContactNumber(registrationRequest.getContactNumber());
         user.setAge(registrationRequest.getAge());
         user.setGender(registrationRequest.getGender());
-        user.setRole(registrationRequest.getRole() != null && !registrationRequest.getRole().isEmpty() ? registrationRequest.getRole() : "resident");
+        user.setRole(registrationRequest.getRole() != null && !registrationRequest.getRole().isEmpty()
+                ? registrationRequest.getRole()
+                : "resident");
         user.setEmail(registrationRequest.getEmail());
         user.setSubdivision(registrationRequest.getSubdivision());
         user.setStreetName(registrationRequest.getStreetName());
@@ -138,13 +140,12 @@ public class AuthController {
     @PostMapping("/logout")
     @Operation(summary = "User Logout", description = "Logs out the user, clears authentication cookies, and optionally removes the device token from the notification service")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Logout successful. Authentication cookies are cleared."),
-        @ApiResponse(responseCode = "401", description = "Unauthorized")
+            @ApiResponse(responseCode = "200", description = "Logout successful. Authentication cookies are cleared."),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     public ResponseEntity<Map<String, String>> logout(
-            @io.swagger.v3.oas.annotations.Parameter(description = "Optional device token to remove from the push notification service", example = "f8W...z2")
-            @RequestParam(required = false) String deviceToken) {
-        
+            @io.swagger.v3.oas.annotations.Parameter(description = "Optional device token to remove from the push notification service", example = "f8W...z2") @RequestParam(required = false) String deviceToken) {
+
         if (deviceToken != null && !deviceToken.isEmpty()) {
             pushyService.removeToken(deviceToken);
         }
@@ -176,8 +177,8 @@ public class AuthController {
     @PostMapping("/device-login")
     @Operation(summary = "Device Login", description = "Associate a user ID with a device token")
     @io.swagger.v3.oas.annotations.Parameters({
-        @io.swagger.v3.oas.annotations.Parameter(name = "userId", example = "1", description = "ID of the user"),
-        @io.swagger.v3.oas.annotations.Parameter(name = "deviceToken", example = "f8W...z2", description = "Device token to associate")
+            @io.swagger.v3.oas.annotations.Parameter(name = "userId", example = "1", description = "ID of the user"),
+            @io.swagger.v3.oas.annotations.Parameter(name = "deviceToken", example = "f8W...z2", description = "Device token to associate")
     })
     public ResponseEntity<Map<String, String>> deviceLogin(@RequestParam Map<String, String> requestData) {
         Long userId = Long.valueOf(requestData.get("userId"));
@@ -197,16 +198,17 @@ public class AuthController {
     @PostMapping("/refresh-token")
     @Operation(summary = "Refresh Access Token")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Access token refreshed successfully"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized. Invalid or expired refresh token.")
+            @ApiResponse(responseCode = "200", description = "Access token refreshed successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized. Invalid or expired refresh token.")
     })
-    public ResponseEntity<Map<String, String>> refreshToken(@CookieValue(value = "refreshToken", required = false) String refreshToken) {
+    public ResponseEntity<Map<String, String>> refreshToken(
+            @CookieValue(value = "refreshToken", required = false) String refreshToken) {
         if (refreshToken == null || refreshToken.isEmpty()) {
             return ResponseEntity.status(401).build();
         }
-        
+
         String username = jwtService.extractUsername(refreshToken);
-        
+
         if (username != null && jwtService.isTokenValid(refreshToken, username)) {
             Optional<User> userOpt = userRepository.findByUsername(username);
             if (userOpt.isPresent()) {
@@ -222,8 +224,8 @@ public class AuthController {
     @GetMapping("/{id}")
     @Operation(summary = "Get User Information by ID", description = "Returns user information based on the provided user ID")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved user information"),
-        @ApiResponse(responseCode = "404", description = "User not found.")
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved user information"),
+            @ApiResponse(responseCode = "404", description = "User not found.")
     })
     public ResponseEntity<?> getUserById(@PathVariable Long id) {
         Optional<User> userOpt = userRepository.findById(id);
@@ -251,18 +253,18 @@ public class AuthController {
     @GetMapping("/me")
     @Operation(summary = "Get Current User Information", description = "Returns user information based on the provided access token")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved user information"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized. Invalid or missing token."),
-        @ApiResponse(responseCode = "404", description = "User not found.")
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved user information"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized. Invalid or missing token."),
+            @ApiResponse(responseCode = "404", description = "User not found.")
     })
     public ResponseEntity<?> getCurrentUser(@CookieValue(value = "accessToken", required = false) String accessToken) {
         if (accessToken == null || accessToken.isEmpty()) {
             return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
         }
-        
+
         try {
             String username = jwtService.extractUsername(accessToken);
-            
+
             if (username != null && jwtService.isTokenValid(accessToken, username)) {
                 Optional<User> userOpt = userRepository.findByUsername(username);
                 if (userOpt.isPresent()) {
@@ -288,7 +290,7 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(401).body(Map.of("message", "Invalid token"));
         }
-        
+
         return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
     }
 }

@@ -22,6 +22,8 @@ public class Complaint {
     private String description;
     private String location;
     private String status; // e.g., PENDING, IN_PROGRESS, ON_GOING, COMPLETED, WITHDRAWN
+    private Integer severityScore;
+    private String severityLabel; // LOW, MODERATE, HIGH, CRITICAL
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
@@ -40,7 +42,8 @@ public class Complaint {
     @Column(name = "video_url", columnDefinition = "jsonb")
     private List<String> videoUrl = new ArrayList<>();
 
-    public Complaint() {}
+    public Complaint() {
+    }
 
     public Long getId() {
         return id;
@@ -88,6 +91,22 @@ public class Complaint {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public Integer getSeverityScore() {
+        return severityScore;
+    }
+
+    public void setSeverityScore(Integer severityScore) {
+        this.severityScore = severityScore;
+    }
+
+    public String getSeverityLabel() {
+        return severityLabel;
+    }
+
+    public void setSeverityLabel(String severityLabel) {
+        this.severityLabel = severityLabel;
     }
 
     public List<Remark> getRemarks() {

@@ -58,6 +58,43 @@ URL: http://localhost:8081/swagger-ui.html
 
 ---
 
+## Complaint Severity Scoring
+
+New complaints receive a `severityScore` and `severityLabel` before they are saved. The mobile app can send these optional scoring inputs with the complaint form:
+
+*   `incidentType`
+*   `hasInjury`
+*   `needsImmediateResponse`
+*   `hasPropertyDamage`
+*   `affectedPeopleCount`
+
+Severity points are calculated using these rules:
+
+| Factor | Points |
+|---|---:|
+| Life-threatening emergency keywords | +50 |
+| Injury reported | +35 |
+| Fire / violence / medical emergency keywords | +30 |
+| Needs immediate response | +25 |
+| Multiple people affected (`affectedPeopleCount > 1`) | +20 |
+| Property damage | +15 |
+| Public safety hazard keywords | +10 |
+| Has photo/video evidence | +5 |
+| Older unresolved report by incident date: 1+ days / 3+ days / 7+ days | +5 / +10 / +15 |
+
+Severity labels are assigned by score range:
+
+| Score Range | Label |
+|---:|---|
+| 0 - 24 | LOW |
+| 25 - 49 | MODERATE |
+| 50 - 79 | HIGH |
+| 80+ | CRITICAL |
+
+`GET /complaints` returns all reports sorted by highest `severityScore` first. The prioritization is handled in `ComplaintPriorityService` with an explicit brute-force O(n^2) nested-loop comparison.
+
+---
+
 ## Project Structure
 *   src/main/java/backend/controller: API Request handlers.
 *   src/main/java/backend/service: Business logic and external service integration.

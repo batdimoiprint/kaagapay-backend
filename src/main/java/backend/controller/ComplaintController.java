@@ -9,6 +9,8 @@ import backend.model.Remark;
 import backend.repository.ComplaintRepository;
 import backend.repository.UserRepository;
 import backend.security.JwtService;
+import backend.service.ComplaintPriorityService;
+import backend.service.SeverityService;
 import backend.logging.LogUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -51,6 +53,12 @@ public class ComplaintController {
     private JwtService jwtService;
 
     @Autowired
+    private SeverityService severityService;
+
+    @Autowired
+    private ComplaintPriorityService complaintPriorityService;
+
+    @Autowired
     private backend.service.PushyService pushyService;
 
     @Autowired
@@ -78,15 +86,13 @@ public class ComplaintController {
     @PostMapping(consumes = MediaType.ALL_VALUE)
     @Operation(summary = "Create a new complaint")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Complaint created successfully"),
-        @ApiResponse(responseCode = "400", description = "Bad Request. User not found or invalid complaint data.")
+            @ApiResponse(responseCode = "200", description = "Complaint created successfully"),
+            @ApiResponse(responseCode = "400", description = "Bad Request. User not found or invalid complaint data.")
     })
     public ResponseEntity<?> createComplaint(
             @ModelAttribute ComplaintRequest request,
-            @Parameter(description = "Optional photo attachment", content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = @Schema(type = "string", format = "binary")))
-            @RequestParam(value = "photo", required = false) MultipartFile photo,
-            @Parameter(description = "Optional video attachment", content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = @Schema(type = "string", format = "binary")))
-            @RequestParam(value = "video", required = false) MultipartFile video,
+            @Parameter(description = "Optional photo attachment", content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = @Schema(type = "string", format = "binary"))) @RequestParam(value = "photo", required = false) MultipartFile photo,
+            @Parameter(description = "Optional video attachment", content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = @Schema(type = "string", format = "binary"))) @RequestParam(value = "video", required = false) MultipartFile video,
             HttpServletRequest httpRequest) {
         log.debug(
                 "[POST /complaints] method={} uri={} contentType={} complaintType={} dateOfIncident={} description={} location={} photo={} video={}",
@@ -98,8 +104,7 @@ public class ComplaintController {
                 request.getDescription(),
                 request.getLocation(),
                 photo != null ? photo.getOriginalFilename() + " (" + photo.getSize() + " bytes)" : "null",
-                video != null ? video.getOriginalFilename() + " (" + video.getSize() + " bytes)" : "null"
-        );
+                video != null ? video.getOriginalFilename() + " (" + video.getSize() + " bytes)" : "null");
 
         Long userId = extractUserIdFromRequest(httpRequest);
         if (userId == null) {
@@ -131,8 +136,14 @@ public class ComplaintController {
             }
         } catch (IOException e) {
             log.error("[POST /complaints] Failed to upload media", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to upload media: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to upload media: " + e.getMessage());
         }
+
+        boolean hasMediaEvidence = !complaint.getPictureUrl().isEmpty() || !complaint.getVideoUrl().isEmpty();
+        SeverityService.SeverityResult severity = severityService.calculateSeverity(request, hasMediaEvidence);
+        complaint.setSeverityScore(severity.getScore());
+        complaint.setSeverityLabel(severity.getLabel());
 
         return ResponseEntity.ok(complaintRepository.save(complaint));
     }
@@ -162,7 +173,7 @@ public class ComplaintController {
     @Operation(summary = "Get all complaints")
     @ApiResponse(responseCode = "200", description = "Returns a list of all complaints")
     public List<Complaint> getAllComplaints() {
-        return complaintRepository.findAll();
+        return complaintPriorityService.sortByHighestSeverity(complaintRepository.findAll());
     }
 
     @GetMapping("-complaints")
@@ -179,8 +190,8 @@ public class ComplaintController {
     @GetMapping("/{id}")
     @Operation(summary = "Get a single complaint by ID")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Complaint found and returned"),
-        @ApiResponse(responseCode = "404", description = "Complaint not found for given ID")
+            @ApiResponse(responseCode = "200", description = "Complaint found and returned"),
+            @ApiResponse(responseCode = "404", description = "Complaint not found for given ID")
     })
     public ResponseEntity<?> getComplaintById(@PathVariable Long id) {
         return complaintRepository.findById(id)
@@ -191,10 +202,11 @@ public class ComplaintController {
     @PatchMapping("/{id}")
     @Operation(summary = "Update complaint status")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Status updated successfully"),
-        @ApiResponse(responseCode = "404", description = "Complaint not found for given ID")
+            @ApiResponse(responseCode = "200", description = "Status updated successfully"),
+            @ApiResponse(responseCode = "404", description = "Complaint not found for given ID")
     })
-    public ResponseEntity<?> updateComplaintStatus(@PathVariable Long id, @ModelAttribute ComplaintStatusUpdate update) {
+    public ResponseEntity<?> updateComplaintStatus(@PathVariable Long id,
+            @ModelAttribute ComplaintStatusUpdate update) {
         Optional<Complaint> complaintOpt = complaintRepository.findById(id);
         if (complaintOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -220,11 +232,12 @@ public class ComplaintController {
     @PatchMapping("/{id}/remarks")
     @Operation(summary = "Add a remark to a complaint")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Remark added successfully"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized"),
-        @ApiResponse(responseCode = "404", description = "Complaint not found")
+            @ApiResponse(responseCode = "200", description = "Remark added successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "Complaint not found")
     })
-    public ResponseEntity<?> addRemark(@PathVariable Long id, @ModelAttribute RemarkRequest request, HttpServletRequest httpRequest) {
+    public ResponseEntity<?> addRemark(@PathVariable Long id, @ModelAttribute RemarkRequest request,
+            HttpServletRequest httpRequest) {
         Long userId = extractUserIdFromRequest(httpRequest);
         if (userId == null) {
             return ResponseEntity.status(401).body("Unauthorized: Invalid or missing token");
@@ -245,15 +258,15 @@ public class ComplaintController {
     @PostMapping(value = "/{id}/attachMedia/{mediaType}", consumes = MediaType.ALL_VALUE)
     @Operation(summary = "Attach media (image or video) to a complaint")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Media attached successfully"),
-        @ApiResponse(responseCode = "400", description = "Invalid media type"),
-        @ApiResponse(responseCode = "404", description = "Complaint not found"),
-        @ApiResponse(responseCode = "500", description = "Server error during media upload")
+            @ApiResponse(responseCode = "200", description = "Media attached successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid media type"),
+            @ApiResponse(responseCode = "404", description = "Complaint not found"),
+            @ApiResponse(responseCode = "500", description = "Server error during media upload")
     })
     public ResponseEntity<?> attachMedia(@PathVariable Long id,
-                                         @PathVariable String mediaType,
-                         @RequestBody byte[] fileBytes,
-                         HttpServletRequest httpRequest) {
+            @PathVariable String mediaType,
+            @RequestBody byte[] fileBytes,
+            HttpServletRequest httpRequest) {
         log.debug(
                 "[POST /complaints/{}/attachMedia/{}] method={} uri={} contentType={} contentLength={} accept={} userAgent={} bodyLength={}",
                 id,
@@ -264,8 +277,7 @@ public class ComplaintController {
                 httpRequest.getContentLengthLong(),
                 httpRequest.getHeader("Accept"),
                 httpRequest.getHeader("User-Agent"),
-                fileBytes != null ? fileBytes.length : -1
-        );
+                fileBytes != null ? fileBytes.length : -1);
 
         Optional<Complaint> complaintOpt = complaintRepository.findById(id);
         if (complaintOpt.isEmpty()) {
@@ -316,8 +328,8 @@ public class ComplaintController {
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a complaint")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Complaint deleted successfully"),
-        @ApiResponse(responseCode = "404", description = "Complaint not found for given ID")
+            @ApiResponse(responseCode = "200", description = "Complaint deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "Complaint not found for given ID")
     })
     public ResponseEntity<?> deleteComplaint(@PathVariable Long id) {
         if (!complaintRepository.existsById(id)) {
