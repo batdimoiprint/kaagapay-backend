@@ -24,9 +24,6 @@ public class ComplaintRequest {
     @Schema(description = "Longitude of the incident location", example = "121.030132611756")
     private Double lng;
 
-    @Schema(description = "Incident category used for severity scoring", example = "Fire")
-    private String incidentType;
-
     @Schema(description = "Whether an injury was reported", example = "true")
     private Boolean hasInjury;
 
@@ -88,14 +85,6 @@ public class ComplaintRequest {
 
     public void setLng(Double lng) {
         this.lng = lng;
-    }
-
-    public String getIncidentType() {
-        return incidentType;
-    }
-
-    public void setIncidentType(String incidentType) {
-        this.incidentType = incidentType;
     }
 
     public Boolean getHasInjury() {

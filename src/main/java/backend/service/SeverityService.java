@@ -14,13 +14,13 @@ public class SeverityService {
         int score = 0;
         String searchableIncident = buildSearchableIncident(request);
 
-        if (containsAny(searchableIncident, "life-threatening", "life threatening", "critical emergency")) {
+        if (containsAny(searchableIncident, "fire hazard", "electrical hazard", "animal bite", "attack", "missing person", "harassment", "threats", "life-threatening", "critical emergency")) {
             score += 50;
         }
         if (Boolean.TRUE.equals(request.getHasInjury())) {
             score += 35;
         }
-        if (containsAny(searchableIncident, "fire", "violence", "violent", "medical", "medical emergency")) {
+        if (containsAny(searchableIncident, "domestic conflict", "theft", "suspicious activity", "public health", "infrastructure damage", "fallen tree", "violence", "medical emergency")) {
             score += 30;
         }
         if (Boolean.TRUE.equals(request.getNeedsImmediateResponse())) {
@@ -32,8 +32,11 @@ public class SeverityService {
         if (Boolean.TRUE.equals(request.getHasPropertyDamage())) {
             score += 15;
         }
-        if (containsAny(searchableIncident, "public safety", "hazard", "danger", "unsafe")) {
-            score += 10;
+        if (containsAny(searchableIncident, "flooding", "pipe issue", "road damage", "pothole", "drainage", "clogged canal", "vandalism", "trespassing", "pollution", "public safety", "hazard", "danger", "unsafe")) {
+            score += 15;
+        }
+        if (containsAny(searchableIncident, "noise", "garbage", "sanitation", "parking", "stray", "animal concern", "dispute", "disturbance", "curfew", "ordinance", "abandoned", "vendor", "construction", "building code")) {
+            score += 5;
         }
         if (hasMediaEvidence) {
             score += 5;
@@ -45,10 +48,9 @@ public class SeverityService {
     }
 
     private String buildSearchableIncident(ComplaintRequest request) {
-        String incidentType = request.getIncidentType() != null ? request.getIncidentType() : "";
         String complaintType = request.getComplaintType() != null ? request.getComplaintType() : "";
         String description = request.getDescription() != null ? request.getDescription() : "";
-        return (incidentType + " " + complaintType + " " + description).toLowerCase(Locale.ROOT);
+        return (complaintType + " " + description).toLowerCase(Locale.ROOT);
     }
 
     private boolean containsAny(String value, String... keywords) {

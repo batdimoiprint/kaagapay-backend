@@ -14,6 +14,7 @@ import backend.service.SeverityService;
 import backend.logging.LogUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -94,7 +95,8 @@ public class ComplaintController {
             @ApiResponse(responseCode = "200", description = "Complaint created successfully"),
             @ApiResponse(responseCode = "400", description = "Bad Request. User not found or invalid complaint data.")
     })
-    public ResponseEntity<?> createComplaint(
+        @RequestBody(required = true, content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = @Schema(implementation = ComplaintRequest.class)))
+        public ResponseEntity<?> createComplaint(
             @ModelAttribute ComplaintRequest request,
             @Parameter(description = "Optional photo attachment", content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = @Schema(type = "string", format = "binary"))) @RequestParam(value = "photo", required = false) MultipartFile photo,
             @Parameter(description = "Optional video attachment", content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = @Schema(type = "string", format = "binary"))) @RequestParam(value = "video", required = false) MultipartFile video,
@@ -182,7 +184,7 @@ public class ComplaintController {
     @GetMapping
     @Operation(summary = "Get all complaints")
     @ApiResponse(responseCode = "200", description = "Returns a list of all complaints")
-    public ResponseEntity<?> getAllComplaints(@RequestParam(value = "sort", required = false, defaultValue = "SEVERITY") String sort) {
+    public ResponseEntity<?> getAllComplaints(@Parameter(description = "Sort results by SEVERITY or CREATED (dateOfIncident)", example = "SEVERITY") @RequestParam(value = "sort", required = false, defaultValue = "SEVERITY") String sort) {
         ComplaintSort complaintSort;
         try {
             complaintSort = ComplaintSort.valueOf(sort.toUpperCase());
