@@ -9,6 +9,8 @@ import backend.model.Remark;
 import backend.repository.ComplaintRepository;
 import backend.repository.UserRepository;
 import backend.security.JwtService;
+import backend.service.ComplaintPriorityService;
+import backend.service.SeverityService;
 import backend.logging.LogUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -49,6 +51,12 @@ public class ComplaintController {
 
     @Autowired
     private JwtService jwtService;
+
+    @Autowired
+    private SeverityService severityService;
+
+    @Autowired
+    private ComplaintPriorityService complaintPriorityService;
 
     @Autowired
     private backend.service.PushyService pushyService;
@@ -134,6 +142,11 @@ public class ComplaintController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to upload media: " + e.getMessage());
         }
 
+        boolean hasMediaEvidence = !complaint.getPictureUrl().isEmpty() || !complaint.getVideoUrl().isEmpty();
+        SeverityService.SeverityResult severity = severityService.calculateSeverity(request, hasMediaEvidence);
+        complaint.setSeverityScore(severity.getScore());
+        complaint.setSeverityLabel(severity.getLabel());
+
         return ResponseEntity.ok(complaintRepository.save(complaint));
     }
 
@@ -162,7 +175,7 @@ public class ComplaintController {
     @Operation(summary = "Get all complaints")
     @ApiResponse(responseCode = "200", description = "Returns a list of all complaints")
     public List<Complaint> getAllComplaints() {
-        return complaintRepository.findAll();
+        return complaintPriorityService.sortByHighestSeverity(complaintRepository.findAll());
     }
 
     @GetMapping("-complaints")

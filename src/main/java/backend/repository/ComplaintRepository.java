@@ -8,6 +8,8 @@ import java.util.List;
 @Repository
 public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
     List<Complaint> findByUser_Id(Long userId);
+
+    List<Complaint> findBySeverityLabelIgnoreCase(String severityLabel);
     
     long countByStatusIgnoreCase(String status);
 }
