@@ -30,7 +30,7 @@ public class RouteController {
 
     private Graph graph;
 
-    private static final String SOURCE_ID = "node_8";
+    private static final String SOURCE_ID = "node_721";
 
     public static class RouteRequest {
         @Schema(description = "Latitude of destination", example = "14.716432646016036")
