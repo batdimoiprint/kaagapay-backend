@@ -70,6 +70,9 @@ public class ComplaintController {
     @Autowired
     private backend.service.CloudinaryService cloudinaryService;
 
+    @Autowired
+    private backend.service.BoundaryService boundaryService;
+
     private Long extractUserIdFromRequest(HttpServletRequest request) {
         String jwt = null;
         String authHeader = request.getHeader("Authorization");
@@ -169,6 +172,13 @@ public class ComplaintController {
         complaint.setNeedsImmediateResponse(parseBoolean(request.getNeedsImmediateResponse()));
         complaint.setHasPropertyDamage(parseBoolean(request.getHasPropertyDamage()));
         complaint.setAffectedPeopleCount(parseInteger(request.getAffectedPeopleCount()));
+
+        // Auto-detect if complaint location is outside Brgy. Sta. Lucia
+        if (request.getLat() != null && request.getLng() != null) {
+            complaint.setIsOutsideBarangay(!boundaryService.isWithinBoundary(request.getLat(), request.getLng()));
+        } else {
+            complaint.setIsOutsideBarangay(false);
+        }
 
         try {
             if (photo != null && !photo.isEmpty()) {

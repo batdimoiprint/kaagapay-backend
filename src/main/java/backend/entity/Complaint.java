@@ -32,6 +32,7 @@ public class Complaint {
     private Boolean needsImmediateResponse;
     private Boolean hasPropertyDamage;
     private Integer affectedPeopleCount;
+    private Boolean isOutsideBarangay = false;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
@@ -189,6 +190,20 @@ public class Complaint {
 
     public void setAffectedPeopleCount(Integer affectedPeopleCount) {
         this.affectedPeopleCount = affectedPeopleCount;
+    }
+
+    @JsonIgnore
+    public Boolean getIsOutsideBarangay() {
+        return isOutsideBarangay;
+    }
+
+    @JsonGetter("isOutsideBarangay")
+    public String getIsOutsideBarangayFormatted() {
+        return Boolean.TRUE.equals(isOutsideBarangay) ? "Yes" : "No";
+    }
+
+    public void setIsOutsideBarangay(Boolean isOutsideBarangay) {
+        this.isOutsideBarangay = isOutsideBarangay;
     }
 
     public List<Remark> getRemarks() {

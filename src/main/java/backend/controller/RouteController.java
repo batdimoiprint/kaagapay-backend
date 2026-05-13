@@ -3,6 +3,7 @@ package backend.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import backend.model.Graph;
 import backend.model.Node;
+import backend.service.BoundaryService;
 import backend.service.DijkstraService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,6 +28,9 @@ public class RouteController {
 
     @Autowired
     private DijkstraService dijkstraService;
+
+    @Autowired
+    private BoundaryService boundaryService;
 
     private Graph graph;
 
@@ -88,13 +92,35 @@ public class RouteController {
         String username = authentication != null ? authentication.getName() : "Anonymous";
         System.out.println("Route requested by user: " + username);
 
-        String destId = findNearestNode(request.getLat(), request.getLng());
-
         Map<String, Object> response = new HashMap<>();
+
+        // 1. Boundary check — is the point inside Brgy. Sta. Lucia?
+        if (!boundaryService.isWithinBoundary(request.getLat(), request.getLng())) {
+            response.put("found", false);
+            response.put("outsideBoundary", true);
+            response.put("message", "Location is outside Barangay Sta. Lucia coverage area");
+            response.put("path", Collections.emptyList());
+            return response;
+        }
+
+        String destId = findNearestNode(request.getLat(), request.getLng());
 
         if (destId == null || destId.equals(SOURCE_ID)) {
             response.put("found", false);
             response.put("message", "No valid destination node found");
+            response.put("path", Collections.emptyList());
+            return response;
+        }
+
+        // 2. Snap distance check — is the nearest node within 150m?
+        Node nearestNode = graph.getNode(destId);
+        double snapDistance = graph.haversine(
+                request.getLat(), request.getLng(),
+                nearestNode.getLat(), nearestNode.getLng());
+        if (snapDistance > 150) {
+            response.put("found", false);
+            response.put("outsideBoundary", true);
+            response.put("message", "No mapped road found near your location");
             response.put("path", Collections.emptyList());
             return response;
         }
@@ -113,10 +139,39 @@ public class RouteController {
             coords.add(Arrays.asList(n.getLat(), n.getLng()));
         }
 
+        // Calculate total real-world distance along the path
+        double totalMeters = 0.0;
+        for (int i = 0; i < path.size() - 1; i++) {
+            Node a = path.get(i);
+            Node b = path.get(i + 1);
+            totalMeters += graph.haversine(a.getLat(), a.getLng(), b.getLat(), b.getLng());
+        }
+
         response.put("found", true);
         response.put("nearestDestinationNode", destId);
         response.put("path", coords);
+        response.put("distanceMeters", Math.round(totalMeters * 100.0) / 100.0);
+        if (totalMeters >= 1000) {
+            response.put("distance", String.format("Distance from Brgy Hall: %.2f km", totalMeters / 1000.0));
+        } else {
+            response.put("distance", String.format("Distance from Brgy Hall: %.2f meters", totalMeters));
+        }
         return response;
+    }
+
+    @Operation(summary = "Check if coordinates are inside Brgy. Sta. Lucia",
+            description = "Returns isOutsideBarangay true/false. Use this for live location checks on the submit page.")
+    @GetMapping("/boundary-check")
+    public Map<String, Object> checkBoundary(
+            @Parameter(description = "Latitude", example = "14.7064", required = true) @RequestParam double lat,
+            @Parameter(description = "Longitude", example = "121.0509", required = true) @RequestParam double lng) {
+        boolean inside = boundaryService.isWithinBoundary(lat, lng);
+        Map<String, Object> result = new HashMap<>();
+        result.put("isOutsideBarangay", !inside);
+        result.put("message", inside
+                ? "Current Location is within Barangay Sta. Lucia"
+                : "The GPS location attached to this complaint is outside Barangay Sta. Lucia.");
+        return result;
     }
 
     @Operation(summary = "Get all nodes", description = "Returns all nodes in the graph with their ID, lat, and lng.")
