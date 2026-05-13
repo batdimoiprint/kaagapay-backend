@@ -201,13 +201,14 @@ public class ComplaintController {
 
     @GetMapping("-complaints")
     @Operation(summary = "Get complaints filed by current user")
-    @ApiResponse(responseCode = "200", description = "Returns a list of complaints for the logged-in user")
+    @ApiResponse(responseCode = "200", description = "Returns a list of complaints for the logged-in user, sorted by date created (newest first)")
     public ResponseEntity<?> getMyComplaints(HttpServletRequest httpRequest) {
         Long userId = extractUserIdFromRequest(httpRequest);
         if (userId == null) {
             return ResponseEntity.status(401).body("Unauthorized: Invalid or missing token");
         }
-        return ResponseEntity.ok(complaintRepository.findByUser_Id(userId));
+        List<Complaint> userComplaints = complaintRepository.findByUser_Id(userId);
+        return ResponseEntity.ok(complaintPriorityService.sortByNewestFirst(userComplaints));
     }
 
     @GetMapping("/{id}")

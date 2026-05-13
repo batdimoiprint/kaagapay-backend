@@ -5,34 +5,28 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 @Service
 public class SeverityService {
 
     public SeverityResult calculateSeverity(ComplaintRequest request, boolean hasMediaEvidence) {
         int score = 0;
-        String complaintType = buildSearchableComplaintType(request);
 
-        score = addComplaintTypeScore(score, complaintType, 50,
-                "Fire Hazard / Open Burning",
-                "Electrical Hazard",
-                "Animal Bite / Attack",
-                "Missing Person (local report)",
-                "Harassment / Threats");
+        String normalizedType = normalizeText(
+                request.getComplaintType() != null ? request.getComplaintType() : "");
+        String normalizedDesc = normalizeText(
+                request.getDescription() != null ? request.getDescription() : "");
 
+        // --- 1. Score from complaint-type + description keyword matching ---
+        score += calculateKeywordScore(normalizedType, normalizedDesc);
+
+        // --- 2. Contextual flags ---
         if (Boolean.TRUE.equals(request.getHasInjury())) {
             score += 35;
         }
-
-        score = addComplaintTypeScore(score, complaintType, 30,
-                "Domestic Conflict",
-                "Theft / Petty Crime",
-                "Suspicious Activity",
-                "Public Health Concern",
-                "Infrastructure Damage",
-                "Tree Obstruction / Fallen Tree");
-
         if (Boolean.TRUE.equals(request.getNeedsImmediateResponse())) {
             score += 25;
         }
@@ -43,57 +37,64 @@ public class SeverityService {
             score += 15;
         }
 
-        score = addComplaintTypeScore(score, complaintType, 15,
-                "Vandalism / Property Damage",
-                "Trespassing",
-                "Water Leakage / Pipe Issue",
-                "Drainage / Flooding",
-                "Clogged Canal / Sewer",
-                "Road Damage / Potholes",
-                "Broken Streetlight",
-                "Illegal Construction",
-                "Building Code Violation",
-                "Pollution (air water noise)",
-                "Abandoned Vehicle",
-                "Illegal Vendor / Sidewalk Obstruction");
-
-        score = addComplaintTypeScore(score, complaintType, 5,
-                "Neighborhood Dispute",
-                "Noise Complaint",
-                "Public Disturbance",
-                "Illegal Parking / Obstruction",
-                "Waste / Garbage Issue",
-                "Sanitation Problem",
-                "Animal Concern",
-                "Stray Animals",
-                "Noise from Business",
-                "Curfew Violation",
-                "Ordinance Violation",
-                "Parking Dispute",
-                "Lost and Found",
-                "Other");
-
+        // --- 3. Media evidence ---
         if (hasMediaEvidence) {
             score += 5;
         }
 
+        // --- 4. Incident age ---
         score += calculateAgePoints(request.getDateOfIncident());
 
         return new SeverityResult(score, resolveLabel(score));
     }
 
-    private String buildSearchableComplaintType(ComplaintRequest request) {
-        String complaintType = request.getComplaintType() != null ? request.getComplaintType() : "";
-        return normalizeText(complaintType);
-    }
+    /**
+     * Determines the base severity score by matching the complaint type dropdown
+     * value AND scanning the free-text description for known keywords.
+     *
+     * The highest-tier match wins (we do NOT stack tier scores).
+     */
+    private int calculateKeywordScore(String normalizedType, String normalizedDesc) {
+        int bestScore = 0;
 
-    private int addComplaintTypeScore(int currentScore, String normalizedComplaintType, int points, String... complaintTypes) {
-        for (String complaintType : complaintTypes) {
-            if (normalizedComplaintType.equals(normalizeText(complaintType))) {
-                return currentScore + points;
+        for (Map.Entry<Integer, List<List<String>>> entry : ComplaintKeywords.TIERS.entrySet()) {
+            int tierPoints = entry.getKey();
+            if (tierPoints <= bestScore) {
+                continue; // already have a higher match
+            }
+
+            for (List<String> keywordList : entry.getValue()) {
+                if (matchesAny(normalizedType, normalizedDesc, keywordList)) {
+                    bestScore = tierPoints;
+                    break; // found a match in this tier, no need to check more lists at same tier
+                }
             }
         }
-        return currentScore;
+
+        return bestScore;
+    }
+
+    /**
+     * Returns true if the normalised complaint type exactly equals any keyword
+     * (after normalisation), OR the normalised description contains any keyword.
+     */
+    private boolean matchesAny(String normalizedType, String normalizedDesc,
+                               List<String> keywords) {
+        for (String keyword : keywords) {
+            String normalizedKeyword = normalizeText(keyword);
+            if (normalizedKeyword.isEmpty()) {
+                continue;
+            }
+            // Exact match on the dropdown type
+            if (normalizedType.equals(normalizedKeyword)) {
+                return true;
+            }
+            // Substring match on the description
+            if (!normalizedDesc.isEmpty() && normalizedDesc.contains(normalizedKeyword)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String normalizeText(String value) {
