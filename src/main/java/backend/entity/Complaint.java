@@ -27,6 +27,10 @@ public class Complaint {
     private String status; // e.g., PENDING, IN_PROGRESS, ON_GOING, COMPLETED, WITHDRAWN
     private Integer severityScore;
     private String severityLabel; // LOW, MODERATE, HIGH, CRITICAL
+    private Boolean hasInjury;
+    private Boolean needsImmediateResponse;
+    private Boolean hasPropertyDamage;
+    private Integer affectedPeopleCount;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
@@ -134,6 +138,38 @@ public class Complaint {
 
     public void setSeverityLabel(String severityLabel) {
         this.severityLabel = severityLabel;
+    }
+
+    public Boolean getHasInjury() {
+        return hasInjury;
+    }
+
+    public void setHasInjury(Boolean hasInjury) {
+        this.hasInjury = hasInjury;
+    }
+
+    public Boolean getNeedsImmediateResponse() {
+        return needsImmediateResponse;
+    }
+
+    public void setNeedsImmediateResponse(Boolean needsImmediateResponse) {
+        this.needsImmediateResponse = needsImmediateResponse;
+    }
+
+    public Boolean getHasPropertyDamage() {
+        return hasPropertyDamage;
+    }
+
+    public void setHasPropertyDamage(Boolean hasPropertyDamage) {
+        this.hasPropertyDamage = hasPropertyDamage;
+    }
+
+    public Integer getAffectedPeopleCount() {
+        return affectedPeopleCount;
+    }
+
+    public void setAffectedPeopleCount(Integer affectedPeopleCount) {
+        this.affectedPeopleCount = affectedPeopleCount;
     }
 
     public List<Remark> getRemarks() {

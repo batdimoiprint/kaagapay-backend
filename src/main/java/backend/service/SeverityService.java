@@ -23,17 +23,17 @@ public class SeverityService {
         // --- 1. Score from complaint-type + description keyword matching ---
         score += calculateKeywordScore(normalizedType, normalizedDesc);
 
-        // --- 2. Contextual flags ---
-        if (Boolean.TRUE.equals(request.getHasInjury())) {
+        // --- 2. Contextual flags (fields are Strings from MIT App Inventor) ---
+        if (parseBoolean(request.getHasInjury())) {
             score += 35;
         }
-        if (Boolean.TRUE.equals(request.getNeedsImmediateResponse())) {
+        if (parseBoolean(request.getNeedsImmediateResponse())) {
             score += 25;
         }
-        if (request.getAffectedPeopleCount() != null && request.getAffectedPeopleCount() > 1) {
+        if (parseInteger(request.getAffectedPeopleCount()) > 1) {
             score += 20;
         }
-        if (Boolean.TRUE.equals(request.getHasPropertyDamage())) {
+        if (parseBoolean(request.getHasPropertyDamage())) {
             score += 15;
         }
 
@@ -105,6 +105,21 @@ public class SeverityService {
                 .replaceAll("[^a-z0-9]+", " ")
                 .trim()
                 .replaceAll("\\s+", " ");
+    }
+
+    private boolean parseBoolean(String value) {
+        return "true".equalsIgnoreCase(value);
+    }
+
+    private int parseInteger(String value) {
+        if (value == null || value.isEmpty()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     private int calculateAgePoints(LocalDateTime dateOfIncident) {

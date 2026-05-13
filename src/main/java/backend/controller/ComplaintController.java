@@ -14,7 +14,7 @@ import backend.service.SeverityService;
 import backend.logging.LogUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -89,31 +89,58 @@ public class ComplaintController {
         return null;
     }
 
+    private Boolean parseBoolean(String value) {
+        return "true".equalsIgnoreCase(value);
+    }
+
+    private Integer parseInteger(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
     @PostMapping(consumes = MediaType.ALL_VALUE)
     @Operation(summary = "Create a new complaint")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Complaint created successfully"),
             @ApiResponse(responseCode = "400", description = "Bad Request. User not found or invalid complaint data.")
     })
-        @RequestBody(required = true, content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = @Schema(implementation = ComplaintRequest.class)))
+        @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true, content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = @Schema(implementation = ComplaintRequest.class)))
         public ResponseEntity<?> createComplaint(
             @ModelAttribute ComplaintRequest request,
             @Parameter(description = "Optional photo attachment", content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = @Schema(type = "string", format = "binary"))) @RequestParam(value = "photo", required = false) MultipartFile photo,
             @Parameter(description = "Optional video attachment", content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = @Schema(type = "string", format = "binary"))) @RequestParam(value = "video", required = false) MultipartFile video,
             HttpServletRequest httpRequest) {
-        log.debug(
-            "[POST /complaints] method={} uri={} contentType={} complaintType={} dateOfIncident={} description={} location={} lat={} lng={} photo={} video={}",
+        log.info(
+            "[POST /complaints] method={} uri={} contentType={} contentLength={} complaintType={} dateOfIncident={} description={} location={} lat={} lng={}",
                 httpRequest.getMethod(),
                 httpRequest.getRequestURI(),
                 httpRequest.getContentType(),
+                httpRequest.getContentLengthLong(),
                 request.getComplaintType(),
                 request.getDateOfIncident(),
                 request.getDescription(),
                 request.getLocation(),
-            request.getLat(),
-            request.getLng(),
-                photo != null ? photo.getOriginalFilename() + " (" + photo.getSize() + " bytes)" : "null",
-                video != null ? video.getOriginalFilename() + " (" + video.getSize() + " bytes)" : "null");
+                request.getLat(),
+                request.getLng());
+        log.info("[POST /complaints] photo={} photoSize={} photoContentType={}",
+                photo != null ? photo.getOriginalFilename() : "null",
+                photo != null ? photo.getSize() + " bytes" : "0",
+                photo != null ? photo.getContentType() : "n/a");
+        log.info("[POST /complaints] video={} videoSize={} videoContentType={}",
+                video != null ? video.getOriginalFilename() : "null",
+                video != null ? video.getSize() + " bytes" : "0",
+                video != null ? video.getContentType() : "n/a");
+        log.info("[POST /complaints] hasInjury={} needsImmediateResponse={} hasPropertyDamage={} affectedPeopleCount={}",
+                request.getHasInjury(),
+                request.getNeedsImmediateResponse(),
+                request.getHasPropertyDamage(),
+                request.getAffectedPeopleCount());
 
         Long userId = extractUserIdFromRequest(httpRequest);
         if (userId == null) {
@@ -138,6 +165,10 @@ public class ComplaintController {
         complaint.setLng(request.getLng());
         complaint.setStatus("PENDING");
         complaint.setUser(user);
+        complaint.setHasInjury(parseBoolean(request.getHasInjury()));
+        complaint.setNeedsImmediateResponse(parseBoolean(request.getNeedsImmediateResponse()));
+        complaint.setHasPropertyDamage(parseBoolean(request.getHasPropertyDamage()));
+        complaint.setAffectedPeopleCount(parseInteger(request.getAffectedPeopleCount()));
 
         try {
             if (photo != null && !photo.isEmpty()) {
@@ -291,17 +322,15 @@ public class ComplaintController {
             @PathVariable String mediaType,
             @RequestBody byte[] fileBytes,
             HttpServletRequest httpRequest) {
-        log.debug(
-                "[POST /complaints/{}/attachMedia/{}] method={} uri={} contentType={} contentLength={} accept={} userAgent={} bodyLength={}",
+        log.info(
+                "[POST /complaints/{}/attachMedia/{}] contentType={} contentLength={} bodyLength={} accept={} userAgent={}",
                 id,
                 mediaType,
-                httpRequest.getMethod(),
-                httpRequest.getRequestURI(),
                 httpRequest.getContentType(),
                 httpRequest.getContentLengthLong(),
+                fileBytes != null ? fileBytes.length : -1,
                 httpRequest.getHeader("Accept"),
-                httpRequest.getHeader("User-Agent"),
-                fileBytes != null ? fileBytes.length : -1);
+                httpRequest.getHeader("User-Agent"));
 
         Optional<Complaint> complaintOpt = complaintRepository.findById(id);
         if (complaintOpt.isEmpty()) {

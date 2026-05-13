@@ -24,17 +24,17 @@ public class ComplaintRequest {
     @Schema(description = "Longitude of the incident location", example = "121.030132611756")
     private Double lng;
 
-    @Schema(description = "Whether an injury was reported (default: false)", example = "true")
-    private Boolean hasInjury = false;
+    @Schema(description = "Whether an injury was reported", example = "true")
+    private String hasInjury;
 
-    @Schema(description = "Whether the incident needs an immediate response (default: false)", example = "true")
-    private Boolean needsImmediateResponse = false;
+    @Schema(description = "Whether the incident needs an immediate response", example = "true")
+    private String needsImmediateResponse;
 
-    @Schema(description = "Whether property damage was reported (default: false)", example = "false")
-    private Boolean hasPropertyDamage = false;
+    @Schema(description = "Whether property damage was reported", example = "false")
+    private String hasPropertyDamage;
 
-    @Schema(description = "Number of people affected by the incident (default: 1)", example = "3")
-    private Integer affectedPeopleCount = 1;
+    @Schema(description = "Number of people affected by the incident", example = "3")
+    private String affectedPeopleCount;
 
     public ComplaintRequest() {
     }
@@ -87,35 +87,35 @@ public class ComplaintRequest {
         this.lng = lng;
     }
 
-    public Boolean getHasInjury() {
+    public String getHasInjury() {
         return hasInjury;
     }
 
-    public void setHasInjury(Boolean hasInjury) {
+    public void setHasInjury(String hasInjury) {
         this.hasInjury = hasInjury;
     }
 
-    public Boolean getNeedsImmediateResponse() {
+    public String getNeedsImmediateResponse() {
         return needsImmediateResponse;
     }
 
-    public void setNeedsImmediateResponse(Boolean needsImmediateResponse) {
+    public void setNeedsImmediateResponse(String needsImmediateResponse) {
         this.needsImmediateResponse = needsImmediateResponse;
     }
 
-    public Boolean getHasPropertyDamage() {
+    public String getHasPropertyDamage() {
         return hasPropertyDamage;
     }
 
-    public void setHasPropertyDamage(Boolean hasPropertyDamage) {
+    public void setHasPropertyDamage(String hasPropertyDamage) {
         this.hasPropertyDamage = hasPropertyDamage;
     }
 
-    public Integer getAffectedPeopleCount() {
+    public String getAffectedPeopleCount() {
         return affectedPeopleCount;
     }
 
-    public void setAffectedPeopleCount(Integer affectedPeopleCount) {
+    public void setAffectedPeopleCount(String affectedPeopleCount) {
         this.affectedPeopleCount = affectedPeopleCount;
     }
 }
