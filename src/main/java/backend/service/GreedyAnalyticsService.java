@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class GreedyAnalyticsService {
@@ -60,27 +59,22 @@ public class GreedyAnalyticsService {
             monthlyCounts.put(monthKey, monthlyCounts.getOrDefault(monthKey, 0L) + 1);
         }
 
-        // Greedy Selection: Pick the top 5 incident types
-        List<Map.Entry<String, Long>> topTypes = typeFrequency.entrySet().stream()
-                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                .limit(5)
-                .collect(Collectors.toList());
+        Map.Entry<String, Long> topType = typeFrequency.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .orElse(new AbstractMap.SimpleEntry<>("N/A", 0L));
 
-        // Greedy Selection: Pick the peak month (locally optimal choice for peak period)
         Map.Entry<String, Long> peakEntry = monthlyCounts.entrySet().stream()
                 .max(Map.Entry.comparingByValue())
                 .orElse(new AbstractMap.SimpleEntry<>("N/A", 0L));
 
-        GreedyAnalyticsResponse.PeakPeriod peakPeriod = new GreedyAnalyticsResponse.PeakPeriod(
-                peakEntry.getKey(), peakEntry.getValue()
-        );
-
         return new GreedyAnalyticsResponse(
-                monthlyTotal,
-                semiAnnualTotal,
-                annualTotal,
-                topTypes,
-                peakPeriod
+                Long.toString(monthlyTotal),
+                Long.toString(semiAnnualTotal),
+                Long.toString(annualTotal),
+                topType.getKey(),
+                Long.toString(topType.getValue()),
+                peakEntry.getKey(),
+                Long.toString(peakEntry.getValue())
         );
     }
 }
