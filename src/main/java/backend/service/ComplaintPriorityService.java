@@ -9,20 +9,32 @@ import java.util.List;
 @Service
 public class ComplaintPriorityService {
 
+    /**
+     * Status priority: PENDING (highest) → ON_GOING → COMPLETED → WITHDRAWN (lowest).
+     * Within the same status group, sort by severityScore descending.
+     */
     public List<Complaint> sortByHighestSeverity(List<Complaint> complaints) {
-        List<Complaint> prioritizedComplaints = new ArrayList<>(complaints);
-
-        for (int i = 0; i < prioritizedComplaints.size() - 1; i++) {
-            for (int j = i + 1; j < prioritizedComplaints.size(); j++) {
-                if (getSeverityScore(prioritizedComplaints.get(j)) > getSeverityScore(prioritizedComplaints.get(i))) {
-                    Complaint temp = prioritizedComplaints.get(i);
-                    prioritizedComplaints.set(i, prioritizedComplaints.get(j));
-                    prioritizedComplaints.set(j, temp);
-                }
+        List<Complaint> sorted = new ArrayList<>(complaints);
+        sorted.sort((a, b) -> {
+            int statusCmp = getStatusPriority(a.getStatus()) - getStatusPriority(b.getStatus());
+            if (statusCmp != 0) {
+                return statusCmp; // lower priority number = higher in list
             }
-        }
+            // Same status group → highest severity first
+            return getSeverityScore(b) - getSeverityScore(a);
+        });
+        return sorted;
+    }
 
-        return prioritizedComplaints;
+    private int getStatusPriority(String status) {
+        if (status == null) return 99;
+        return switch (status.toUpperCase()) {
+            case "PENDING"   -> 0;
+            case "ON_GOING"  -> 1;
+            case "COMPLETED" -> 2;
+            case "WITHDRAWN" -> 3;
+            default          -> 99;
+        };
     }
 
     public List<Complaint> sortByNewestFirst(List<Complaint> complaints) {
