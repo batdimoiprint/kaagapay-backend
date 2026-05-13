@@ -38,8 +38,8 @@ public class AnalyticsController {
         return ResponseEntity.ok(summary);
     }
 
-    @Operation(summary = "Get analytics report generated using Greedy Algorithm", 
-               description = "Efficiently processes incident data into monthly, semi-annual, and annual summaries.")
+    @Operation(summary = "Get analytics report generated using Greedy Algorithm",
+               description = "Single flat JSON: totals, one top incident type, and peak month; numeric fields are strings.")
     @ApiResponse(responseCode = "200", description = "Successfully generated greedy analytics report")
     @GetMapping("/greedy-report")
     public ResponseEntity<backend.dto.GreedyAnalyticsResponse> getGreedyReport() {

@@ -1,52 +1,46 @@
 package backend.dto;
 
-import java.util.List;
-import java.util.Map;
-
 public class GreedyAnalyticsResponse {
-    private long monthlyTotal;
-    private long semiAnnualTotal;
-    private long annualTotal;
-    private List<Map.Entry<String, Long>> topIncidentTypes;
-    private PeakPeriod peakPeriod;
+    private String monthlyTotal;
+    private String semiAnnualTotal;
+    private String annualTotal;
+    private String topIncidentType;
+    private String topIncidentTypeCount;
+    private String peakMonth;
+    private String peakMonthCount;
 
     public GreedyAnalyticsResponse() {}
 
-    public GreedyAnalyticsResponse(long monthlyTotal, long semiAnnualTotal, long annualTotal, 
-                                   List<Map.Entry<String, Long>> topIncidentTypes, PeakPeriod peakPeriod) {
+    public GreedyAnalyticsResponse(String monthlyTotal, String semiAnnualTotal, String annualTotal,
+                                   String topIncidentType, String topIncidentTypeCount,
+                                   String peakMonth, String peakMonthCount) {
         this.monthlyTotal = monthlyTotal;
         this.semiAnnualTotal = semiAnnualTotal;
         this.annualTotal = annualTotal;
-        this.topIncidentTypes = topIncidentTypes;
-        this.peakPeriod = peakPeriod;
+        this.topIncidentType = topIncidentType;
+        this.topIncidentTypeCount = topIncidentTypeCount;
+        this.peakMonth = peakMonth;
+        this.peakMonthCount = peakMonthCount;
     }
 
-    // Getters and Setters
-    public long getMonthlyTotal() { return monthlyTotal; }
-    public void setMonthlyTotal(long monthlyTotal) { this.monthlyTotal = monthlyTotal; }
+    public String getMonthlyTotal() { return monthlyTotal; }
+    public void setMonthlyTotal(String monthlyTotal) { this.monthlyTotal = monthlyTotal; }
 
-    public long getSemiAnnualTotal() { return semiAnnualTotal; }
-    public void setSemiAnnualTotal(long semiAnnualTotal) { this.semiAnnualTotal = semiAnnualTotal; }
+    public String getSemiAnnualTotal() { return semiAnnualTotal; }
+    public void setSemiAnnualTotal(String semiAnnualTotal) { this.semiAnnualTotal = semiAnnualTotal; }
 
-    public long getAnnualTotal() { return annualTotal; }
-    public void setAnnualTotal(long annualTotal) { this.annualTotal = annualTotal; }
+    public String getAnnualTotal() { return annualTotal; }
+    public void setAnnualTotal(String annualTotal) { this.annualTotal = annualTotal; }
 
-    public List<Map.Entry<String, Long>> getTopIncidentTypes() { return topIncidentTypes; }
-    public void setTopIncidentTypes(List<Map.Entry<String, Long>> topIncidentTypes) { this.topIncidentTypes = topIncidentTypes; }
+    public String getTopIncidentType() { return topIncidentType; }
+    public void setTopIncidentType(String topIncidentType) { this.topIncidentType = topIncidentType; }
 
-    public PeakPeriod getPeakPeriod() { return peakPeriod; }
-    public void setPeakPeriod(PeakPeriod peakPeriod) { this.peakPeriod = peakPeriod; }
+    public String getTopIncidentTypeCount() { return topIncidentTypeCount; }
+    public void setTopIncidentTypeCount(String topIncidentTypeCount) { this.topIncidentTypeCount = topIncidentTypeCount; }
 
-    public static class PeakPeriod {
-        private String month;
-        private long count;
+    public String getPeakMonth() { return peakMonth; }
+    public void setPeakMonth(String peakMonth) { this.peakMonth = peakMonth; }
 
-        public PeakPeriod(String month, long count) {
-            this.month = month;
-            this.count = count;
-        }
-
-        public String getMonth() { return month; }
-        public long getCount() { return count; }
-    }
+    public String getPeakMonthCount() { return peakMonthCount; }
+    public void setPeakMonthCount(String peakMonthCount) { this.peakMonthCount = peakMonthCount; }
 }
