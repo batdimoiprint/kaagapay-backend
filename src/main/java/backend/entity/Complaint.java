@@ -1,6 +1,7 @@
 package backend.entity;
 
 import backend.model.Remark;
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -140,24 +141,42 @@ public class Complaint {
         this.severityLabel = severityLabel;
     }
 
+    @JsonIgnore
     public Boolean getHasInjury() {
         return hasInjury;
+    }
+
+    @JsonGetter("hasInjury")
+    public String getHasInjuryFormatted() {
+        return Boolean.TRUE.equals(hasInjury) ? "Yes" : "No";
     }
 
     public void setHasInjury(Boolean hasInjury) {
         this.hasInjury = hasInjury;
     }
 
+    @JsonIgnore
     public Boolean getNeedsImmediateResponse() {
         return needsImmediateResponse;
+    }
+
+    @JsonGetter("needsImmediateResponse")
+    public String getNeedsImmediateResponseFormatted() {
+        return Boolean.TRUE.equals(needsImmediateResponse) ? "Yes" : "No";
     }
 
     public void setNeedsImmediateResponse(Boolean needsImmediateResponse) {
         this.needsImmediateResponse = needsImmediateResponse;
     }
 
+    @JsonIgnore
     public Boolean getHasPropertyDamage() {
         return hasPropertyDamage;
+    }
+
+    @JsonGetter("hasPropertyDamage")
+    public String getHasPropertyDamageFormatted() {
+        return Boolean.TRUE.equals(hasPropertyDamage) ? "Yes" : "No";
     }
 
     public void setHasPropertyDamage(Boolean hasPropertyDamage) {
