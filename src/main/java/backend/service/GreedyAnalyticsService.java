@@ -29,8 +29,8 @@ public class GreedyAnalyticsService {
         long annualTotal = 0;
 
         Map<String, Long> typeFrequency = new HashMap<>();
-        Map<String, Long> monthlyCounts = new HashMap<>();
-        DateTimeFormatter monthFormatter = DateTimeFormatter.ofPattern("yyyy-MM");
+        Map<String, Long> dateCounts = new HashMap<>();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.ENGLISH);
 
         // Greedy single-pass processing: Process each record and update all statistics immediately
         for (Complaint complaint : complaints) {
@@ -55,15 +55,15 @@ public class GreedyAnalyticsService {
             }
 
             // 3. Temporal Tracking for Peak Period
-            String monthKey = incidentDate.format(monthFormatter);
-            monthlyCounts.put(monthKey, monthlyCounts.getOrDefault(monthKey, 0L) + 1);
+            String dateKey = incidentDate.format(dateFormatter);
+            dateCounts.put(dateKey, dateCounts.getOrDefault(dateKey, 0L) + 1);
         }
 
         Map.Entry<String, Long> topType = typeFrequency.entrySet().stream()
                 .max(Map.Entry.comparingByValue())
                 .orElse(new AbstractMap.SimpleEntry<>("N/A", 0L));
 
-        Map.Entry<String, Long> peakEntry = monthlyCounts.entrySet().stream()
+        Map.Entry<String, Long> peakEntry = dateCounts.entrySet().stream()
                 .max(Map.Entry.comparingByValue())
                 .orElse(new AbstractMap.SimpleEntry<>("N/A", 0L));
 
