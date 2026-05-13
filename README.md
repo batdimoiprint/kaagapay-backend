@@ -60,9 +60,9 @@ URL: http://localhost:8081/swagger-ui.html
 
 ## Complaint Severity Scoring
 
-New complaints receive a `severityScore` and `severityLabel` before they are saved. The mobile app can send these optional scoring inputs with the complaint form:
+New complaints receive a server-generated `severityScore` and `severityLabel` before they are saved. The client should send the complaint details only; the backend computes the severity from `complaintType` and the incident flags below:
 
-*   `incidentType`
+*   `complaintType`
 *   `hasInjury`
 *   `needsImmediateResponse`
 *   `hasPropertyDamage`
@@ -72,13 +72,14 @@ Severity points are calculated using these rules:
 
 | Factor | Points |
 |---|---:|
-| Life-threatening emergency keywords | +50 |
+| `Fire Hazard / Open Burning`, `Electrical Hazard`, `Animal Bite / Attack`, `Missing Person (local report)`, `Harassment / Threats` | +50 |
 | Injury reported | +35 |
-| Fire / violence / medical emergency keywords | +30 |
+| `Domestic Conflict`, `Theft / Petty Crime`, `Suspicious Activity`, `Public Health Concern`, `Infrastructure Damage`, `Tree Obstruction / Fallen Tree` | +30 |
 | Needs immediate response | +25 |
 | Multiple people affected (`affectedPeopleCount > 1`) | +20 |
 | Property damage | +15 |
-| Public safety hazard keywords | +10 |
+| `Vandalism / Property Damage`, `Trespassing`, `Water Leakage / Pipe Issue`, `Drainage / Flooding`, `Clogged Canal / Sewer`, `Road Damage / Potholes`, `Broken Streetlight`, `Illegal Construction`, `Building Code Violation`, `Pollution (air water noise)`, `Abandoned Vehicle`, `Illegal Vendor / Sidewalk Obstruction` | +15 |
+| `Neighborhood Dispute`, `Noise Complaint`, `Public Disturbance`, `Illegal Parking / Obstruction`, `Waste / Garbage Issue`, `Sanitation Problem`, `Animal Concern`, `Stray Animals`, `Noise from Business`, `Curfew Violation`, `Ordinance Violation`, `Parking Dispute`, `Lost and Found`, `Other` | +5 |
 | Has photo/video evidence | +5 |
 | Older unresolved report by incident date: 1+ days / 3+ days / 7+ days | +5 / +10 / +15 |
 
@@ -91,7 +92,13 @@ Severity labels are assigned by score range:
 | 50 - 79 | HIGH |
 | 80+ | CRITICAL |
 
-`GET /complaints` returns all reports sorted by highest `severityScore` first. The prioritization is handled in `ComplaintPriorityService` with an explicit brute-force O(n^2) nested-loop comparison.
+`GET /complaints` returns all reports sorted by highest `severityScore` first. The prioritization is handled in `ComplaintPriorityService` with an explicit brute-force O(n^2) nested-loop comparison. You can also request `GET /complaints?sort=CREATED` to sort by `dateOfIncident` instead.
+
+### Severity behavior notes
+
+* The backend does not expect the client to send `severityScore` or `severityLabel`.
+* `complaintType` should be one of the supported complaint categories listed above.
+* If a type is not recognized exactly, it falls back to no type-based points, but the boolean flags and media/date rules still apply.
 
 ---
 

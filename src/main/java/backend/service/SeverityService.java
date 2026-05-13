@@ -12,17 +12,27 @@ public class SeverityService {
 
     public SeverityResult calculateSeverity(ComplaintRequest request, boolean hasMediaEvidence) {
         int score = 0;
-        String searchableIncident = buildSearchableIncident(request);
+        String complaintType = buildSearchableComplaintType(request);
 
-        if (containsAny(searchableIncident, "fire hazard", "electrical hazard", "animal bite", "attack", "missing person", "harassment", "threats", "life-threatening", "critical emergency")) {
-            score += 50;
-        }
+        score = addComplaintTypeScore(score, complaintType, 50,
+                "Fire Hazard / Open Burning",
+                "Electrical Hazard",
+                "Animal Bite / Attack",
+                "Missing Person (local report)",
+                "Harassment / Threats");
+
         if (Boolean.TRUE.equals(request.getHasInjury())) {
             score += 35;
         }
-        if (containsAny(searchableIncident, "domestic conflict", "theft", "suspicious activity", "public health", "infrastructure damage", "fallen tree", "violence", "medical emergency")) {
-            score += 30;
-        }
+
+        score = addComplaintTypeScore(score, complaintType, 30,
+                "Domestic Conflict",
+                "Theft / Petty Crime",
+                "Suspicious Activity",
+                "Public Health Concern",
+                "Infrastructure Damage",
+                "Tree Obstruction / Fallen Tree");
+
         if (Boolean.TRUE.equals(request.getNeedsImmediateResponse())) {
             score += 25;
         }
@@ -32,12 +42,37 @@ public class SeverityService {
         if (Boolean.TRUE.equals(request.getHasPropertyDamage())) {
             score += 15;
         }
-        if (containsAny(searchableIncident, "flooding", "pipe issue", "road damage", "pothole", "drainage", "clogged canal", "vandalism", "trespassing", "pollution", "public safety", "hazard", "danger", "unsafe")) {
-            score += 15;
-        }
-        if (containsAny(searchableIncident, "noise", "garbage", "sanitation", "parking", "stray", "animal concern", "dispute", "disturbance", "curfew", "ordinance", "abandoned", "vendor", "construction", "building code")) {
-            score += 5;
-        }
+
+        score = addComplaintTypeScore(score, complaintType, 15,
+                "Vandalism / Property Damage",
+                "Trespassing",
+                "Water Leakage / Pipe Issue",
+                "Drainage / Flooding",
+                "Clogged Canal / Sewer",
+                "Road Damage / Potholes",
+                "Broken Streetlight",
+                "Illegal Construction",
+                "Building Code Violation",
+                "Pollution (air water noise)",
+                "Abandoned Vehicle",
+                "Illegal Vendor / Sidewalk Obstruction");
+
+        score = addComplaintTypeScore(score, complaintType, 5,
+                "Neighborhood Dispute",
+                "Noise Complaint",
+                "Public Disturbance",
+                "Illegal Parking / Obstruction",
+                "Waste / Garbage Issue",
+                "Sanitation Problem",
+                "Animal Concern",
+                "Stray Animals",
+                "Noise from Business",
+                "Curfew Violation",
+                "Ordinance Violation",
+                "Parking Dispute",
+                "Lost and Found",
+                "Other");
+
         if (hasMediaEvidence) {
             score += 5;
         }
@@ -47,19 +82,28 @@ public class SeverityService {
         return new SeverityResult(score, resolveLabel(score));
     }
 
-    private String buildSearchableIncident(ComplaintRequest request) {
+    private String buildSearchableComplaintType(ComplaintRequest request) {
         String complaintType = request.getComplaintType() != null ? request.getComplaintType() : "";
-        String description = request.getDescription() != null ? request.getDescription() : "";
-        return (complaintType + " " + description).toLowerCase(Locale.ROOT);
+        return normalizeText(complaintType);
     }
 
-    private boolean containsAny(String value, String... keywords) {
-        for (String keyword : keywords) {
-            if (value.contains(keyword)) {
-                return true;
+    private int addComplaintTypeScore(int currentScore, String normalizedComplaintType, int points, String... complaintTypes) {
+        for (String complaintType : complaintTypes) {
+            if (normalizedComplaintType.equals(normalizeText(complaintType))) {
+                return currentScore + points;
             }
         }
-        return false;
+        return currentScore;
+    }
+
+    private String normalizeText(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", " ")
+                .trim()
+                .replaceAll("\\s+", " ");
     }
 
     private int calculateAgePoints(LocalDateTime dateOfIncident) {

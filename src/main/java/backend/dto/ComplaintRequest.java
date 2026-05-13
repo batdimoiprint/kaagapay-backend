@@ -5,7 +5,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import java.time.LocalDateTime;
 
 public class ComplaintRequest {
-    @Schema(description = "Type of complaint", example = "Street Light Repair")
+    @Schema(description = "Choose one supported complaint type. This is the primary input used for severity scoring.", example = "Fire Hazard / Open Burning")
     private String complaintType;
 
     @Schema(description = "Date and time of incident (ISO-8601)", example = "2024-04-24T10:00:00")
