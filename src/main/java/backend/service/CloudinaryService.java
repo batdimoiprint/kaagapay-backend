@@ -1,6 +1,7 @@
 package backend.service;
 
 import com.cloudinary.Cloudinary;
+import com.cloudinary.Transformation;
 import com.cloudinary.utils.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,7 +22,15 @@ public class CloudinaryService {
                 "resource_type", "image",
                 "folder", DEFAULT_FOLDER
         ));
-        return uploadResult.get("url").toString();
+        String publicId = uploadResult.get("public_id").toString();
+        return cloudinary.url()
+                .resourceType("image")
+                .transformation(new Transformation()
+                    .quality(50)
+                    .fetchFormat("auto")
+                )
+                .secure(false)
+                .generate(publicId);
     }
 
     public String uploadVideo(byte[] data) throws IOException {
@@ -29,7 +38,15 @@ public class CloudinaryService {
                 "resource_type", "video",
                 "folder", DEFAULT_FOLDER
         ));
-        return uploadResult.get("url").toString();
+        String publicId = uploadResult.get("public_id").toString();
+        return cloudinary.url()
+                .resourceType("video")
+                .transformation(new Transformation()
+                    .quality(50)
+                    .fetchFormat("mp4")
+                )
+                .secure(false)
+                .generate(publicId);
     }
 
     public String getMediaUrl(String publicId, String resourceType) {
